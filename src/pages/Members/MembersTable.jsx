@@ -27,20 +27,14 @@ const MembersTable = ({
   pagination,
   currentPage,
   setCurrentPage,
+  onEditClick,
+  onDeleteClick, // ← CHANGED: prop جديدة للحذف
 }) => {
   const { t, i18n } = useTranslation();
   const { isOwner } = useContext(AuthContext);
   const isArabic = i18n.language === "ar";
 
-  const handleDelete = (memberId) => {
-    // TODO: useDeleteMemberMutation
-    console.log("Delete member:", memberId);
-  };
-
-  const handleEdit = (memberId) => {
-    // TODO: open edit modal
-    console.log("Edit member:", memberId);
-  };
+  // ← CHANGED: شيلنا handleDelete، هنستخدم onDeleteClick مباشرة
 
   // Empty state
   if (!members || members.length === 0) {
@@ -106,7 +100,9 @@ const MembersTable = ({
                   </Table.Td>
                   <Table.Td className="hidden md:table-cell">
                     <Badge
-                      color={MembershipTypeColors[member.membershipType] || "gray"}
+                      color={
+                        MembershipTypeColors[member.membershipType] || "gray"
+                      }
                       variant="light"
                       radius="md"
                       size="sm"
@@ -139,26 +135,20 @@ const MembersTable = ({
                   {isOwner && (
                     <Table.Td>
                       <Group gap="xs" justify="flex-end">
-                        <Tooltip
-                          label={t("common.edit", "Edit")}
-                          withArrow
-                        >
+                        <Tooltip label={t("common.edit", "Edit")} withArrow>
                           <ActionIcon
                             variant="subtle"
                             color="blue"
-                            onClick={() => handleEdit(member.id)}
+                            onClick={() => onEditClick(member)}
                           >
                             <FiEdit2 size={16} />
                           </ActionIcon>
                         </Tooltip>
-                        <Tooltip
-                          label={t("common.delete", "Delete")}
-                          withArrow
-                        >
+                        <Tooltip label={t("common.delete", "Delete")} withArrow>
                           <ActionIcon
                             variant="subtle"
                             color="red"
-                            onClick={() => handleDelete(member.id)}
+                            onClick={() => onDeleteClick(member)} // ← CHANGED: onDeleteClick بدل handleDelete، وبتبعث member كامل
                           >
                             <FiTrash2 size={16} />
                           </ActionIcon>
