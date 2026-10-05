@@ -8,7 +8,10 @@ import { ThemeProvider, useTheme } from './Context/ThemeContext.jsx';
 import { Provider } from 'react-redux';
 import { Store } from './Service/Store.jsx';
 import { LanguageProvider } from './Context/LanguageContext.jsx';
+import { ToastProvider } from './Context/ToastContext.jsx';
 import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
+import './utils/chartConfig';
 
 const Root = () => {
   const { isDarkMode } = useTheme();
@@ -46,7 +49,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <ThemeProvider>
           <LanguageProvider>
-            <Root />
+            <ToastProvider>
+              <Root />
+            </ToastProvider>
           </LanguageProvider>
         </ThemeProvider>
       </AuthProvider>
