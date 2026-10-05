@@ -2,14 +2,19 @@ import { Input } from "@mantine/core";
 import { HiMagnifyingGlass, HiXMark } from "react-icons/hi2";
 
 const SearchInput = ({
+    id,
+    name = "search",
     placeholder = "Search...",
     value,
     onChange,
     onClear,
     className,
+    ...rest
 }) => {
     return (
         <Input
+            id={id || rest.id || name}
+            name={name}
             placeholder={placeholder}
             value={value}
             onChange={onChange}

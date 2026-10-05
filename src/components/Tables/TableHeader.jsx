@@ -1,18 +1,20 @@
+import React, { forwardRef } from "react";
 import { Table } from "@mantine/core";
 
-const TableHeader = ({ headers = [], className = "" }) => {
+const TableHeader = forwardRef(({ headers = [], className = "" }, ref) => {
     return (
-        <Table.Thead className="bg-slate-50/80 dark:bg-white/3">
+        <Table.Thead ref={ref} className="bg-slate-50/80 dark:bg-white/3">
             <Table.Tr className="border-b border-slate-200 dark:border-white/10">
                 {headers?.map((head, index) => {
                     const isObj = typeof head === "object" && head !== null;
                     const label = isObj ? head.label : head;
+                    const align = isObj && head.align ? head.align : "start";
                     const alignClass =
-                        isObj && head.align === "center"
-                            ? "text-center"
-                            : isObj && head.align === "end"
-                            ? "text-end"
-                            : "text-start";
+                        align === "center"
+                            ? "text-center!"
+                            : align === "end" || align === "right"
+                            ? "text-end!"
+                            : "text-start!";
 
                     return (
                         <Table.Th
@@ -20,7 +22,10 @@ const TableHeader = ({ headers = [], className = "" }) => {
                             className={`p-3.5 min-w-20 ${alignClass} text-slate-800 dark:text-white font-bold text-xs uppercase tracking-wider ${className} ${
                                 isObj && head.className ? head.className : ""
                             }`}
-                            style={isObj && head.width ? { width: head.width } : undefined}
+                            style={{
+                                ...(isObj && head.width ? { width: head.width } : {}),
+                                textAlign: align === "end" || align === "right" ? "end" : align === "center" ? "center" : "start"
+                            }}
                         >
                             {label}
                         </Table.Th>
@@ -29,6 +34,8 @@ const TableHeader = ({ headers = [], className = "" }) => {
             </Table.Tr>
         </Table.Thead>
     );
-};
+});
+
+TableHeader.displayName = "TableHeader";
 
 export default TableHeader;

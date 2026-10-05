@@ -31,7 +31,7 @@ const TextInputField = ({
     const isTextarea = textarea || type === "textarea";
 
     const defaultClassNames = {
-        input: 'dark:!bg-white/5 dark:!border-white/10 dark:!text-white focus:!border-[#85F40F] font-medium transition-colors',
+        input: 'dark:!bg-white/5 dark:!border-white/10 dark:!text-white focus:[&:not([data-error]):not([data-invalid]):not([aria-invalid="true"])]:!border-[#85F40F] font-medium transition-colors',
         label: 'dark:!text-white font-medium text-xs mb-1',
         description: 'text-[11px] text-gray-400 dark:text-gray-400 mb-1',
         ...classNames,

@@ -51,6 +51,8 @@ const DynamicForm = ({
 
     const onSubmit = (data) => customSubmit?.(data, { reset, setValue });
 
+    const isSubmitDisabled = Boolean((!isDirty && defaultValues?.id) || !isValid || isLoading);
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className={className}>
             <div className="grid grid-cols-12 gap-4">
@@ -73,7 +75,11 @@ const DynamicForm = ({
                                 control={control}
                                 render={({ field }) =>
                                     fieldItem.component({
-                                        field,
+                                        field: {
+                                            id: fieldItem.id || fieldItem.name,
+                                            name: fieldItem.name,
+                                            ...field,
+                                        },
                                         error: errors[fieldItem.name]?.message,
                                         formValues,
                                         setValue,
@@ -87,15 +93,16 @@ const DynamicForm = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-5 mt-4 border-t border-slate-200 dark:border-slate-800 w-full">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-5 mt-4 border-t border-slate-200 dark:border-slate-800 w-full">
                 {onCancel && (
                     <Button
-                        variant="default"
+                        variant="outline"
+                        color='gray'
                         type="button"
                         onClick={onCancel}
                         disabled={isLoading}
                         radius="md"
-                        className="w-full sm:w-auto h-10 px-6 border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 font-semibold transition-all cursor-pointer"
+                        className="w-full! sm:w-auto! h-10 px-6 border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 font-semibold transition-all cursor-pointer justify-center"
                     >
                         {cancelText}
                     </Button>
@@ -104,10 +111,22 @@ const DynamicForm = ({
                 <Button
                     type="submit"
                     loading={isLoading}
-                    disabled={(!isDirty && defaultValues?.id) || !isValid || isLoading}
+                    disabled={isSubmitDisabled}
                     radius="md"
                     leftSection={submitIcon}
-                    className="w-full sm:w-auto h-10 px-7 bg-linear-to-r from-[#85F40F] to-[#6CC80A] hover:from-[#95E913] hover:to-[#79BE0D] text-brand-950 font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-[0_0_15px_rgba(133,244,15,0.35)]"
+                    className={`w-full! sm:w-auto! h-10 px-7 font-bold text-sm bg-linear-to-r from-[#85F40F] to-[#6CC80A] hover:from-[#95E913] hover:to-[#79BE0D] text-brand-950 transition-all duration-200 btn-brand-submit justify-center ${
+                        isSubmitDisabled
+                            ? 'opacity-50! shadow-none! cursor-not-allowed!'
+                            : 'active:scale-95 cursor-pointer shadow-[0_0_20px_rgba(133,244,15,0.35)]'
+                    }`}
+                    style={{
+                        backgroundImage: 'linear-gradient(to right, #85F40F, #6CC80A)',
+                        backgroundColor: 'transparent',
+                        color: '#061400',
+                        opacity: isSubmitDisabled ? 0.5 : 1,
+                        boxShadow: isSubmitDisabled ? 'none' : undefined,
+                        cursor: isSubmitDisabled ? 'not-allowed' : 'pointer',
+                    }}
                 >
                     {submitText}
                 </Button>
