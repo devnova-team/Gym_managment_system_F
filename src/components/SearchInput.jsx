@@ -9,6 +9,7 @@ const SearchInput = ({
     onChange,
     onClear,
     className,
+    clearLabel,
     ...rest
 }) => {
     return (
@@ -27,8 +28,11 @@ const SearchInput = ({
             rightSection={
                 <HiXMark
                     className="text-lg cursor-pointer text-[#85F40F]"
-                    aria-label="Clear input"
+                    aria-label={clearLabel}
+                    title={clearLabel}
                     role="button"
+                    tabIndex={0}
+                    aria-hidden={!value}
                     style={{
                         display: value ? undefined : "none",
                     }}

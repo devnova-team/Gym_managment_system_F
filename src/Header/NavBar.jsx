@@ -22,6 +22,7 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
     const toggleLanguage = () => {
         changeLanguage(language === 'en' ? 'ar' : 'en');
     };
+    const userRoleKey = user?.role ? `staff.${user.role.toLowerCase()}` : 'staff.owner';
 
     const handleLogout = async () => {
         try {
@@ -43,7 +44,7 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                         size="lg"
                         className="text-[#85F40F]! dark:text-[#85F40F]!"
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        aria-label="Toggle navigation menu"
+                        aria-label={t('common.toggleNavigation')}
                     >
                         <HiMenuAlt2 size={24} />
                     </ActionIcon>
@@ -52,12 +53,12 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                 <div className="hidden md:flex flex-col justify-center">
                     <h1 className="text-lg md:text-xl font-black flex items-center gap-2 text-slate-800 dark:text-white">
                         <span className="whitespace-nowrap">
-                            {t('dashboard.welcome', 'Welcome back')}, {user?.name || 'Coach'}
+                            {t('dashboard.welcome')}, {user?.name || t('nav.coach')}
                         </span>
                         <MdWavingHand className="text-[#85F40F] animate-pulse" size={22} />
                     </h1>
                     <p className="text-[11px] text-textColor dark:text-slate-400 font-semibold">
-                        SaaS Tenant: {user?.gym_id || 'gym-001'}
+                        {t('nav.tenantLabel', { id: user?.gym_id || 'gym-001' })}
                     </p>
                 </div>
             </div>
@@ -68,7 +69,7 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                 {/* Language Toggle */}
                 <div className="flex">
                     <Tooltip
-                        label={language === 'en' ? "التبديل إلى العربية" : "Switch to English"}
+                        label={t(language === 'en' ? 'common.switchToArabic' : 'common.switchToEnglish')}
                         withArrow
                         position="bottom"
                     >
@@ -78,7 +79,7 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                             radius="md"
                             onClick={toggleLanguage}
                             className="w-16! bg-gray/10! dark:bg-[#141b24]! text-slate-700! dark:text-slate-300! hover:bg-[#85F40F]! hover:text-brand-950! transition-all! duration-300! border dark:border-slate-800!"
-                            aria-label="Toggle Language"
+                            aria-label={t('common.toggleLanguage')}
                         >
                             <div className="flex items-center gap-1 font-bold text-xs uppercase">
                                 <RiGlobalLine size={18} />
@@ -101,7 +102,7 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                             radius="md"
                             onClick={toggleTheme}
                             className="bg-gray/10! dark:bg-[#141b24]! text-slate-700! dark:text-slate-300! hover:bg-[#85F40F]! hover:text-brand-950! transition-all! duration-300! border dark:border-slate-800!"
-                            aria-label="Toggle Theme"
+                            aria-label={t('common.toggleTheme')}
                         >
                             {isDarkMode ? <MdOutlineLightMode size={20} className="text-[#85F40F]" /> : <MdOutlineDarkMode size={20} />}
                         </ActionIcon>
@@ -111,7 +112,7 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                 {/* Profile & Role Dropdown */}
                 <Menu shadow="md" width={220} position="bottom-end">
                     <Menu.Target>
-                        <button className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141b24] transition-colors cursor-pointer">
+                        <button className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-[#141b24] transition-colors cursor-pointer" aria-label={t('common.openProfileMenu')}>
                             <Avatar
                                 radius="xl"
                                 className="bg-linear-to-br from-[#85F40F] to-[#6CC80A] text-brand-950 font-black"
@@ -123,13 +124,13 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
 
                     <Menu.Dropdown className="dark:bg-[#0e1517]! dark:border-slate-800!">
                         <Menu.Label className="dark:text-gray-400!">
-                            {user?.name || "User"}
+                            {user?.name || t('nav.user')}
                         </Menu.Label>
                         <Menu.Item
                             leftSection={<FiShield size={14} className="text-main" />}
                             className="dark:text-slate-200! capitalize"
                         >
-                            Role: {user?.role || "Owner"}
+                            {t('nav.role')}: {t(userRoleKey, user?.role || t('staff.owner'))}
                         </Menu.Item>
 
                         <Menu.Divider />
