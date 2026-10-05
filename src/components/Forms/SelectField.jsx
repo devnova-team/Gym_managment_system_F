@@ -4,6 +4,8 @@ import { Controller } from "react-hook-form";
 const SelectField = ({
     control,
     name,
+    value,
+    onChange,
     label,
     placeholder,
     description,
@@ -40,6 +42,7 @@ const SelectField = ({
                     render={({ field }) => (
                         <Select
                             id={rest.id || name}
+                            name={name}
                             {...field}
                             label={label}
                             placeholder={placeholder}
@@ -67,6 +70,8 @@ const SelectField = ({
             <Select
                 id={rest.id || name}
                 name={name}
+                value={value !== undefined ? value : rest.value !== undefined ? rest.value : null}
+                onChange={onChange || rest.onChange}
                 label={label}
                 placeholder={placeholder}
                 description={description}

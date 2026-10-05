@@ -1,9 +1,18 @@
 export const formatCurrency = (amount, currency = 'EGP', locale = 'en-US') => {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: currency,
+  const numericAmount = Number(amount) || 0;
+  const isArabic = Boolean(
+    (typeof locale === 'string' && locale.toLowerCase().startsWith('ar')) ||
+    locale === true
+  );
+  const effectiveLocale = isArabic ? 'ar-EG' : (typeof locale === 'string' ? locale : 'en-US');
+
+  const formattedNumber = new Intl.NumberFormat(effectiveLocale, {
     maximumFractionDigits: 0,
-  }).format(amount || 0);
+  }).format(numericAmount);
+
+  const symbol = isArabic ? (currency === 'EGP' ? 'ج.م' : currency) : currency;
+
+  return `${formattedNumber} ${symbol}`;
 };
 
 export const formatDate = (dateString, locale = 'en-US') => {

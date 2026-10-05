@@ -6,7 +6,7 @@
 export const mockDashboardData = {
     gymInfo: {
         id: 'gym-001',
-        name: 'FitPulse Arena (Big Khalaf)',
+        name: 'FitPulse Arena',
         tier: 'Enterprise SaaS',
         timezone: 'Africa/Cairo',
     },
