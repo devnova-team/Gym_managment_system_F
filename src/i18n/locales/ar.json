@@ -61,6 +61,9 @@
     "pageSize": "عناصر لكل صفحة",
     "records": "سجلات",
     "delete": "حذف",
+    "confirmDelete": "حذف",
+    "deleteConfirmTitle": "تأكيد الحذف",
+    "deleteConfirmMessage": "متأكد إنك عايز تحذف",
     "edit": "تعديل",
     "view": "عرض",
     "add": "إضافة جديد",
@@ -164,7 +167,24 @@
     "startDate": "تاريخ البداية",
     "endDate": "تاريخ الانتهاء",
     "renew": "تجديد الاشتراك",
-    "cashPayment": "دفع نقدي (كاش)"
+    "cashPayment": "دفع نقدي (كاش)",
+    "photeUrl": "رابط الصورة",
+    "namePlaceholder": "اكتب اسم العضو",
+    "emailPlaceholder": "member@example.com",
+    "phonePlaceholder": "01xxxxxxxxx",
+    "photoUrlPlaceholder": "https://example.com/photo.jpg",
+    "planPlaceholder": "اختر باقة",
+    "deleteSuccess": "تم حذف العضو بنجاح",
+    "errors": {
+      "nameRequired": "من فضلك اكتب الاسم",
+      "nameShort": "الاسم لازم يكون 3 حروف على الأقل",
+      "phoneRequired": "من فضلك اكتب رقم التليفون",
+      "phoneInvalid": "رقم التليفون غير صحيح",
+      "join_dataRequired": "من فضلك اكتب تاريخ الميلاد",
+      "photoInvalid": "رابط الصورة غير صحيح",
+      "invalidEmail": "البريد الإلكتروني غير صحيح",
+      "planRequired": "أدخل خطة اشتراكك"
+    }
   },
   "attendance": {
     "title": "حضور الأعضاء",
