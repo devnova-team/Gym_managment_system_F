@@ -16,20 +16,22 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
+    supportedLngs: ['en', 'ar'],
     interpolation: {
       escapeValue: false,
     },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
     },
   });
 
 // Update document direction on language change
 const syncDirection = (lng) => {
-  const dir = lng === 'ar' ? 'rtl' : 'ltr';
+  const language = lng?.toLowerCase().startsWith('ar') ? 'ar' : 'en';
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
   document.documentElement.setAttribute('dir', dir);
-  document.documentElement.setAttribute('lang', lng);
+  document.documentElement.setAttribute('lang', language);
 };
 
 syncDirection(i18n.language);

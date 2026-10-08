@@ -2,14 +2,20 @@ import { Input } from "@mantine/core";
 import { HiMagnifyingGlass, HiXMark } from "react-icons/hi2";
 
 const SearchInput = ({
+    id,
+    name = "search",
     placeholder = "Search...",
     value,
     onChange,
     onClear,
     className,
+    clearLabel,
+    ...rest
 }) => {
     return (
         <Input
+            id={id || rest.id || name}
+            name={name}
             placeholder={placeholder}
             value={value}
             onChange={onChange}
@@ -22,8 +28,11 @@ const SearchInput = ({
             rightSection={
                 <HiXMark
                     className="text-lg cursor-pointer text-[#85F40F]"
-                    aria-label="Clear input"
+                    aria-label={clearLabel}
+                    title={clearLabel}
                     role="button"
+                    tabIndex={0}
+                    aria-hidden={!value}
                     style={{
                         display: value ? undefined : "none",
                     }}
