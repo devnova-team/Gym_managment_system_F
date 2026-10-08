@@ -2,10 +2,10 @@ import { baseApi } from '../baseApi';
 
 export const attendanceApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
-        // POST /api/attendance/check-in - Manual member check-in
+        // POST /api/attendance/in-check - Manual member check-in
         checkIn: builder.mutation({
             query: (checkInData) => ({
-                url: '/attendance/check-in',
+                url: '/attendance/in-check',
                 method: 'POST',
                 body: checkInData,
             }),
@@ -19,12 +19,12 @@ export const attendanceApi = baseApi.injectEndpoints({
             }),
             providesTags: ['Attendance'],
         }),
-        // POST /api/attendance/sync - Sync offline check-in records using idempotent local_id
+        // POST /api/attendance/sync - Sync offline check-in records using idempotent id_local
         syncOfflineAttendance: builder.mutation({
-            query: (records) => ({
+            query: (payload) => ({
                 url: '/attendance/sync',
                 method: 'POST',
-                body: { records },
+                body: payload,
             }),
             invalidatesTags: ['Attendance', 'Dashboard'],
         }),

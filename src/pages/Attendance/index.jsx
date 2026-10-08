@@ -5,41 +5,20 @@ import { Alert, Avatar, Badge, Button, Card, SegmentedControl, Stack, Table, Tex
 import { FiCheckCircle, FiUsers } from 'react-icons/fi';
 import { HiExclamationTriangle } from 'react-icons/hi2';
 import SearchInput from '../../components/SearchInput';
-import TableSkeleton from '../../components/Tables/TableSkeleton';
-import { useCheckInMutation, useGetTodayAttendanceQuery, useSyncOfflineAttendanceMutation } from '../../Service/Apis/attendanceApi';
-import { useGetMembersQuery } from '../../Service/Apis/membersApi';
-import { mockMembers } from '../../data/mockAttendance';
-import { addToOfflineQueue, clearOfflineQueue, getOfflineQueue } from '../../utils/storage';
+import { mockAttendanceRecords, mockMembers } from '../../data/mockAttendance';
+import {
+    generateIdLocal,
+    getPendingAttendance,
+    getSyncedHistory,
+    queueAttendanceRecord,
+    syncPendingQueue,
+} from '../../Service/attendanceSyncMock';
 import { formatTime } from '../../utils/formatters';
 
-const USE_MOCK_ATTENDANCE = true;
 const attendanceStatusMeta = {
     present: { color: 'green', key: 'attendance.present' },
     late: { color: 'orange', key: 'attendance.late' },
     not_coming: { color: 'gray', key: 'attendance.notComing' },
-};
-
-const normalizeList = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (!payload || typeof payload !== 'object') return [];
-
-    const candidates = [
-        payload.data,
-        payload.records,
-        payload.members,
-        payload.attendance,
-        payload.result,
-    ];
-
-    for (const candidate of candidates) {
-        if (Array.isArray(candidate)) return candidate;
-        if (candidate && typeof candidate === 'object') {
-            const nested = normalizeList(candidate);
-            if (nested.length) return nested;
-        }
-    }
-
-    return [];
 };
 
 const getMemberMeta = (record, t) => {
@@ -52,8 +31,11 @@ const getMemberMeta = (record, t) => {
         nameAr: rawMember.nameAr || record?.member_name_ar || record?.nameAr || '',
         phone: rawMember.phone || rawMember.phone_number || record?.phone || '',
         photo: rawMember.photo_url || rawMember.photoUrl || rawMember.photo || '',
-        attendanceStatus: rawMember.attendanceStatus ?? record?.attendanceStatus ?? null,
+        attendanceStatus: rawMember.attendanceStatus ?? record?.attendanceStatus ?? 'present',
         checkInTime: rawMember.checkInTime || rawMember.check_in_time || record?.checkInTime || record?.check_in_time || null,
+        memberStatus: rawMember.memberStatus || rawMember.status || 'Active',
+        subscriptionEndDate: rawMember.subscriptionEndDate || null,
+        lastAttendance: rawMember.lastAttendance || rawMember.last_attendance || null,
     };
 };
 
@@ -71,47 +53,16 @@ const getCheckInTime = (record) => {
     return record?.check_in_time || record?.checkInTime || record?.created_at || record?.createdAt || null;
 };
 
-const extractErrorMessage = (error, t) => {
-    if (!error) return t('common.errorOccurred');
-
-    if (typeof error === 'string') return error;
-
-    if (error?.status === 401) {
-        return t('attendance.sessionExpired');
+const isExpiredSubscription = (member) => {
+    if (!member) return false;
+    if (member.memberStatus === 'Expired' || member.status === 'Expired') return true;
+    if (member.subscriptionEndDate) {
+        const endDate = new Date(member.subscriptionEndDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (endDate < today) return true;
     }
-    if (error?.status === 403) {
-        return t('attendance.forbidden');
-    }
-    if (error?.status === 404) {
-        return t('attendance.apiError');
-    }
-    if (error?.status >= 500) {
-        return t('attendance.serverError');
-    }
-    if (error?.status === 400 || error?.status === 422) {
-        const payload = error?.data || error;
-        if (payload?.errors && typeof payload.errors === 'object') {
-            const firstValue = Object.values(payload.errors)?.[0];
-            if (Array.isArray(firstValue)) return firstValue[0];
-            if (typeof firstValue === 'string') return firstValue;
-        }
-        if (payload?.message) return payload.message;
-        return t('attendance.requestError');
-    }
-    if (error?.error === 'Failed to fetch' || !navigator.onLine) {
-        return t('attendance.networkError');
-    }
-
-    const payload = error?.data || error;
-    if (payload?.message) return payload.message;
-    if (payload?.errors && typeof payload.errors === 'object') {
-        const firstValue = Object.values(payload.errors)?.[0];
-        if (Array.isArray(firstValue)) return firstValue[0];
-        if (typeof firstValue === 'string') return firstValue;
-    }
-    if (payload?.error) return payload.error;
-
-    return t('common.errorOccurred');
+    return false;
 };
 
 const Attendance = () => {
@@ -120,222 +71,390 @@ const Attendance = () => {
     const locale = language?.toLowerCase().startsWith('ar') ? 'ar-EG' : 'en-US';
     const [search, setSearch] = useState('');
     const [selectedMember, setSelectedMember] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState('present');
+
+    const [mockMemberState, setMockMemberState] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('gms_member_state');
+                if (saved) return JSON.parse(saved);
+            } catch {
+                // ignore
+            }
+        }
+        return mockMembers;
+    });
+
+    const [todayAttendanceState, setTodayAttendanceState] = useState(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('gms_today_attendance');
+                if (saved) return JSON.parse(saved);
+            } catch {
+                // ignore
+            }
+        }
+        return mockAttendanceRecords;
+    });
+
     const [notice, setNotice] = useState(null);
     const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false);
-    const [pendingSyncState, setPendingSyncState] = useState(getOfflineQueue().length > 0);
-    const [mockMemberState, setMockMemberState] = useState(mockMembers);
+    const [pendingRecords, setPendingRecords] = useState(() => getPendingAttendance());
+    const [syncedHistory, setSyncedHistory] = useState(() => getSyncedHistory());
+    const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    const [syncState, setSyncState] = useState({
+        status: 'idle',
+        pendingCount: 0,
+        lastSyncAt: null,
+        error: null,
+        syncedCount: 0,
+        totalCount: 0,
+    });
 
     const [debouncedSearch] = useDebouncedValue(search, 350);
 
-    const { data: membersResponse, isFetching: isSearchingMembers, error: membersError } = useGetMembersQuery(
-        { search: debouncedSearch.trim() },
-        { skip: USE_MOCK_ATTENDANCE || !debouncedSearch.trim() }
-    );
-    const { data: attendanceResponse, isLoading: isApiLoadingAttendance, error: attendanceError, refetch: refetchAttendance } = useGetTodayAttendanceQuery(undefined, {
-        skip: USE_MOCK_ATTENDANCE,
-    });
-    const [checkInMutation] = useCheckInMutation();
-    const [syncOfflineAttendance] = useSyncOfflineAttendanceMutation();
+    const refreshPendingQueue = useCallback(() => {
+        const queue = getPendingAttendance();
+        setPendingRecords(queue);
+        setSyncState((current) => ({
+            ...current,
+            pendingCount: queue.length,
+            totalCount: Math.max(current.totalCount || queue.length, queue.length),
+        }));
+        return queue;
+    }, []);
+
+    const syncPendingMockRecords = useCallback(async (failIds = []) => {
+        const queue = getPendingAttendance();
+        if (!queue.length) {
+            setSyncState((current) => ({ ...current, status: 'idle', pendingCount: 0, error: null }));
+            return;
+        }
+
+        setSyncState((current) => ({
+            ...current,
+            status: 'syncing',
+            error: null,
+            pendingCount: queue.length,
+        }));
+
+        const result = await syncPendingQueue({ failIds });
+        const nextPending = result.remaining || [];
+
+        if (result.syncedRecords?.length) {
+            setTodayAttendanceState((current) => {
+                const existingIds = new Set(current.map((r) => String(r.memberId)));
+                const newItems = result.syncedRecords
+                    .filter((r) => !existingIds.has(String(r.memberId)))
+                    .map((r) => ({
+                        id: r.id_local,
+                        memberId: r.memberId,
+                        memberName: r.memberName,
+                        checkInTime: r.checkInTime,
+                        status: r.attendanceStatus === 'late' ? 'Late' : r.attendanceStatus === 'not_coming' ? 'Not Coming' : 'Present',
+                        attendanceStatus: r.attendanceStatus || 'present',
+                    }));
+                const updated = [...current, ...newItems];
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('gms_today_attendance', JSON.stringify(updated));
+                }
+                return updated;
+            });
+
+            setNotice({
+                type: 'success',
+                message: t('attendance.syncSuccess') || 'Pending attendance was synced successfully.',
+            });
+        }
+
+        setPendingRecords(nextPending);
+        setSyncedHistory(getSyncedHistory());
+        setSyncState({
+            status: result.success ? 'synced' : 'failed',
+            pendingCount: nextPending.length,
+            lastSyncAt: new Date().toISOString(),
+            error: result.failedRecords?.length ? t('attendance.syncStatusError') : null,
+            syncedCount: result.syncedRecords?.length || 0,
+            totalCount: result.total || queue.length,
+        });
+    }, [t]);
+
+    useEffect(() => {
+        const handleOffline = () => setIsOnline(false);
+        const syncWhenOnline = () => {
+            const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+            setIsOnline(online);
+            if (online) {
+                syncPendingMockRecords();
+            }
+        };
+
+        syncWhenOnline();
+        window.addEventListener('online', syncWhenOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', syncWhenOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [syncPendingMockRecords]);
+
+    useEffect(() => {
+        refreshPendingQueue();
+    }, [refreshPendingQueue]);
 
     const members = useMemo(() => {
         const searchTerm = debouncedSearch.trim().toLowerCase();
-        const list = USE_MOCK_ATTENDANCE
-            ? mockMemberState
-                .filter((member) => `${member.name} ${member.nameAr} ${member.phone}`.toLowerCase().includes(searchTerm))
-                .map((member) => ({ member }))
-            : normalizeList(membersResponse);
-        return list.filter((member) => {
-            const meta = getLocalizedMemberMeta(member, t, language);
-            return !!meta.name;
-        });
-    }, [debouncedSearch, i18n.language, i18n.resolvedLanguage, membersResponse, mockMemberState, t, language]);
+        return mockMemberState
+            .filter((member) => `${member.name} ${member.nameAr} ${member.phone}`.toLowerCase().includes(searchTerm))
+            .map((member) => ({ member }));
+    }, [debouncedSearch, mockMemberState]);
 
-    const realAttendanceList = useMemo(() => {
-        const list = normalizeList(attendanceResponse);
-        return list.map((record) => {
-            const memberMeta = getLocalizedMemberMeta(record, t, language);
+    const checkAlreadyCheckedIn = useCallback((memberId) => {
+        if (!memberId) return false;
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(todayStart.getTime() + 86400000);
+
+        const allRecords = [...todayAttendanceState, ...pendingRecords, ...syncedHistory];
+        return allRecords.some((record) => {
+            const rMemberId = record.memberId ?? record.member_id;
+            if (String(rMemberId) !== String(memberId)) return false;
+            const recordTime = record.checkInTime || record.createdAt;
+            if (!recordTime) return false;
+            const date = new Date(recordTime);
+            return date >= todayStart && date < todayEnd;
+        });
+    }, [todayAttendanceState, pendingRecords, syncedHistory]);
+
+    const attendanceList = useMemo(() => {
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const todayEnd = new Date(todayStart.getTime() + 86400000);
+
+        const pendingRows = pendingRecords.map((record) => ({
+            id: record.id_local,
+            memberId: record.memberId,
+            memberName: record.memberName,
+            checkInTime: record.checkInTime,
+            attendanceStatus: record.attendanceStatus || 'present',
+            isPendingSync: true,
+            member: {
+                id: record.memberId,
+                name: record.memberName,
+                nameAr: record.memberName,
+            },
+        }));
+
+        const historyRows = syncedHistory.map((record) => ({
+            id: record.id_local,
+            memberId: record.memberId,
+            memberName: record.memberName,
+            checkInTime: record.checkInTime,
+            attendanceStatus: record.attendanceStatus || 'present',
+            isPendingSync: false,
+            member: {
+                id: record.memberId,
+                name: record.memberName,
+                nameAr: record.memberName,
+            },
+        }));
+
+        const todayRows = todayAttendanceState.map((record) => ({
+            id: record.id || `att-${record.memberId}-${record.checkInTime}`,
+            memberId: record.memberId,
+            memberName: record.memberName,
+            checkInTime: record.checkInTime,
+            attendanceStatus: record.attendanceStatus || (record.status?.toLowerCase() === 'late' ? 'late' : record.status?.toLowerCase() === 'not coming' ? 'not_coming' : 'present'),
+            isPendingSync: false,
+            member: {
+                id: record.memberId,
+                name: record.memberName,
+                nameAr: record.memberName,
+            },
+        }));
+
+        const allToday = [...todayRows, ...pendingRows, ...historyRows].filter((record) => {
+            const checkInTime = record.checkInTime || getCheckInTime(record);
+            if (!checkInTime) return false;
+            const checkInDate = new Date(checkInTime);
+            return checkInDate >= todayStart && checkInDate < todayEnd;
+        });
+
+        const memberMap = new Map();
+        allToday.forEach((record) => {
+            const mId = String(record.memberId);
+            if (!memberMap.has(mId)) {
+                memberMap.set(mId, record);
+            } else {
+                const existing = memberMap.get(mId);
+                const existingTime = new Date(existing.checkInTime || 0).getTime();
+                const recordTime = new Date(record.checkInTime || 0).getTime();
+                if (recordTime > existingTime) {
+                    memberMap.set(mId, record);
+                }
+            }
+        });
+
+        return Array.from(memberMap.values()).map((record) => {
+            const member = mockMemberState.find((item) => String(item.id) === String(record.memberId));
             return {
                 ...record,
-                id: record.id ?? record.local_id ?? record.member_id ?? memberMeta.id,
-                member: memberMeta,
-                checkInTime: getCheckInTime(record),
+                member: {
+                    ...record.member,
+                    phone: member?.phone || '',
+                    photo: member?.photo || null,
+                },
             };
         });
-    }, [attendanceResponse, language, t]);
+    }, [todayAttendanceState, pendingRecords, syncedHistory, mockMemberState]);
 
-    const attendanceList = USE_MOCK_ATTENDANCE
-        ? mockMemberState
-            .filter((member) => member.attendanceStatus === 'present' || member.attendanceStatus === 'late')
-            .map((member) => ({ ...member, member }))
-        : realAttendanceList;
-    const isLoadingAttendance = USE_MOCK_ATTENDANCE ? false : isApiLoadingAttendance;
-    const presentCount = USE_MOCK_ATTENDANCE
-        ? mockMemberState.filter((member) => member.attendanceStatus === 'present' || member.attendanceStatus === 'late').length
-        : attendanceList.length;
+    const presentCount = attendanceList.length;
     const selectedMemberId = selectedMember ? getMemberMeta(selectedMember, t).id : null;
-    const currentSelectedMember = USE_MOCK_ATTENDANCE
-        ? mockMemberState.find((member) => member.id === selectedMemberId)
-        : selectedMember;
+    const currentSelectedMember = selectedMember
+        ? mockMemberState.find((member) => String(member.id) === String(selectedMemberId)) || selectedMember
+        : null;
     const selectedMemberInfo = currentSelectedMember
         ? getLocalizedMemberMeta(currentSelectedMember, t, language)
         : null;
 
-    const handleAttendanceStatusChange = (attendanceStatus) => {
-        if (!USE_MOCK_ATTENDANCE || !selectedMemberInfo) return;
+    const isCurrentMemberExpired = isExpiredSubscription(currentSelectedMember);
+    const isCurrentMemberAlreadyCheckedIn = selectedMemberId ? checkAlreadyCheckedIn(selectedMemberId) : false;
 
-        setMockMemberState((currentMembers) => currentMembers.map((member) => {
-            if (member.id !== selectedMemberInfo.id) return member;
-
-            return {
-                ...member,
-                attendanceStatus,
-                checkInTime: attendanceStatus === 'not_coming'
-                    ? null
-                    : member.checkInTime || new Date().toISOString(),
-            };
-        }));
+    const handleSelectMember = (member) => {
+        setSelectedMember(member);
+        const meta = getMemberMeta(member, t);
+        setSelectedStatus(meta.attendanceStatus || 'present');
     };
 
-    const syncPendingRecords = useCallback(async () => {
-        const queue = getOfflineQueue();
-        if (!queue.length || !navigator.onLine) return;
-
-        try {
-            await syncOfflineAttendance({ records: queue }).unwrap();
-            clearOfflineQueue();
-            setPendingSyncState(false);
-            setNotice({ type: 'success', key: 'attendance.syncSuccess' });
-            if (!USE_MOCK_ATTENDANCE) await refetchAttendance();
-        } catch (syncError) {
-            setPendingSyncState(true);
-            setNotice({
-                type: 'error',
-                error: syncError,
-            });
+    const handleAttendanceStatusChange = (status) => {
+        setSelectedStatus(status);
+        if (selectedMemberInfo?.id) {
+            setMockMemberState((current) => current.map((member) => (
+                String(member.id) === String(selectedMemberInfo.id)
+                    ? { ...member, attendanceStatus: status }
+                    : member
+            )));
         }
-    }, [refetchAttendance, syncOfflineAttendance, t]);
-
-    useEffect(() => {
-        if (navigator.onLine) {
-            syncPendingRecords();
-        }
-    }, [syncPendingRecords]);
-
-    useEffect(() => {
-        const handleOnline = () => {
-            syncPendingRecords();
-        };
-
-        window.addEventListener('online', handleOnline);
-        return () => window.removeEventListener('online', handleOnline);
-    }, [syncPendingRecords]);
+    };
 
     const handleCheckIn = async () => {
         if (!selectedMember) {
             setNotice({
                 type: 'error',
-                key: 'attendance.selectMemberError',
+                message: t('attendance.selectMemberError') || 'Please select a member first.',
             });
             return;
         }
 
-        const memberId = selectedMemberInfo?.id ?? selectedMember.id ?? selectedMember.member_id ?? selectedMember.memberId ?? selectedMember.value;
+        const memberId = selectedMemberInfo?.id ?? selectedMember.id ?? selectedMember.member_id;
         if (!memberId) {
             setNotice({
                 type: 'error',
-                key: 'attendance.invalidMember',
+                message: t('attendance.selectMemberError') || 'Please select a member first.',
             });
             return;
         }
-        if (USE_MOCK_ATTENDANCE) return;
+
+        if (isCurrentMemberExpired) {
+            setNotice({
+                type: 'error',
+                message: t('attendance.expiredWarning') || 'Subscription expired. Renewal required!',
+            });
+            return;
+        }
+
+        if (isCurrentMemberAlreadyCheckedIn) {
+            setNotice({
+                type: 'error',
+                message: t('attendance.alreadyCheckedIn') || 'Member is already checked in today.',
+            });
+            return;
+        }
 
         setIsSubmittingCheckIn(true);
 
-        try {
-            if (!navigator.onLine) {
-                const queuedRecord = addToOfflineQueue({
-                    member_id: memberId,
-                    member: selectedMember,
-                    check_in_time: new Date().toISOString(),
-                    local_id: `offline_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-                });
+        await new Promise((resolve) => setTimeout(resolve, 400));
 
-                setPendingSyncState(true);
-                setNotice({
-                    type: 'info',
-                    key: 'attendance.offlineQueued',
-                    values: { id: queuedRecord.local_id },
-                });
-                setSelectedMember(null);
-                setSearch('');
-                return;
-            }
+        const checkInTime = new Date().toISOString();
+        const todayDateStr = checkInTime.split('T')[0];
+        const chosenStatus = selectedStatus || selectedMemberInfo?.attendanceStatus || 'present';
+        const statusLabel = chosenStatus === 'late' ? 'Late' : chosenStatus === 'not_coming' ? 'Not Coming' : 'Present';
 
-            const result = await checkInMutation({ member_id: memberId }).unwrap();
-            const payloadData = normalizeList(result?.data || result);
-            const createdRecord = payloadData[0] || result?.data || result?.attendance || result;
-
-            if (createdRecord && typeof createdRecord === 'object') {
-                const memberMeta = getLocalizedMemberMeta(createdRecord, t, language);
-                const checkInTime = getCheckInTime(createdRecord);
-                setNotice({
-                    type: 'success',
-                    key: 'attendance.checkInSuccess',
-                    values: { name: memberMeta.name, nameAr: memberMeta.nameAr, checkInTime },
-                });
-            } else {
-                setNotice({
-                    type: 'success',
-                    key: 'attendance.checkedInName',
-                    values: { name: selectedMemberInfo.name },
-                });
-            }
-
-            setSelectedMember(null);
-            setSearch('');
-            if (!USE_MOCK_ATTENDANCE) await refetchAttendance();
-        } catch (error) {
-            setNotice({ type: 'error', error });
-        } finally {
-            setIsSubmittingCheckIn(false);
+        const nextMemberState = mockMemberState.map((member) => (
+            String(member.id) === String(memberId)
+                ? {
+                    ...member,
+                    lastAttendance: todayDateStr,
+                    last_attendance: todayDateStr,
+                    attendanceStatus: chosenStatus,
+                    checkInTime,
+                }
+                : member
+        ));
+        setMockMemberState(nextMemberState);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('gms_member_state', JSON.stringify(nextMemberState));
         }
+
+        if (isOnline) {
+            const newRecord = {
+                id: `attendance-${Date.now()}`,
+                memberId,
+                memberName: selectedMemberInfo?.name || selectedMember?.name || 'Member',
+                checkInTime,
+                status: statusLabel,
+                attendanceStatus: chosenStatus,
+            };
+
+            const nextTodayState = [...todayAttendanceState, newRecord];
+            setTodayAttendanceState(nextTodayState);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('gms_today_attendance', JSON.stringify(nextTodayState));
+            }
+
+            setNotice({
+                type: 'success',
+                message: t('attendance.checkInSuccess', { name: selectedMemberInfo?.name, time: formatTime(checkInTime, locale) })
+                    || `${selectedMemberInfo?.name} checked in successfully.`,
+            });
+        } else {
+            queueAttendanceRecord({
+                id_local: generateIdLocal(),
+                memberId,
+                memberName: selectedMemberInfo?.name || selectedMember?.name || 'Member',
+                checkInTime,
+                attendanceStatus: chosenStatus,
+                status: 'pending',
+                createdAt: checkInTime,
+            });
+
+            refreshPendingQueue();
+            setNotice({
+                type: 'info',
+                message: t('attendance.offlineSavedMessage')
+                    || 'Attendance saved offline. It will sync automatically when the connection returns.',
+            });
+        }
+
+        setSelectedMember(null);
+        setSearch('');
+        setIsSubmittingCheckIn(false);
     };
 
-    const attendanceErrorMessage = USE_MOCK_ATTENDANCE
-        ? ''
-        : attendanceError
-            ? extractErrorMessage(attendanceError, t)
-            : null;
-    const memberSearchErrorMessage = !USE_MOCK_ATTENDANCE && membersError
-        ? extractErrorMessage(membersError, t)
-        : null;
-    const noticeMember = notice?.memberId
-        ? mockMemberState.find((member) => member.id === notice.memberId)
-        : null;
-    const noticeName = noticeMember
-        ? language.toLowerCase().startsWith('ar') && noticeMember.nameAr
-            ? noticeMember.nameAr
-            : noticeMember.name
-        : language.toLowerCase().startsWith('ar') && notice?.values?.nameAr
-            ? notice.values.nameAr
-            : notice?.values?.name;
-    const noticeMessage = notice?.key
-        ? t(notice.key, {
-            ...notice.values,
-            name: noticeName,
-            time: notice?.values?.checkInTime
-                ? formatTime(notice.values.checkInTime, locale)
-                : notice?.values?.time,
-        })
-        : notice?.error
-            ? extractErrorMessage(notice.error, t)
-            : '';
+    const syncBadge = !isOnline
+        ? { color: 'gray', label: t('attendance.syncStatusOffline') || 'Offline — attendance will be saved locally' }
+        : syncState.status === 'syncing'
+            ? { color: 'blue', label: t('attendance.syncStatusSyncing') || 'Syncing attendance...' }
+            : syncState.pendingCount > 0
+                ? { color: 'yellow', label: t('attendance.syncStatusPending', { count: syncState.pendingCount }) || `${syncState.pendingCount} attendance records waiting to sync` }
+                : syncState.status === 'synced'
+                    ? { color: 'green', label: t('attendance.syncSuccess') || 'Attendance synced successfully' }
+                    : syncState.status === 'failed'
+                        ? { color: 'orange', label: t('attendance.syncStatusError') || 'Some attendance records could not be synchronized.' }
+                        : { color: 'green', label: t('attendance.syncStatusOnline') || 'Online' };
 
-    const renderApiErrorAlert = (message) => (
-        <Alert color="red" variant="light" icon={<HiExclamationTriangle size={18} />}>
-            {message}
-        </Alert>
-    );
+    const noticeMessage = notice?.message || '';
 
     return (
         <div className="space-y-6">
@@ -349,15 +468,21 @@ const Attendance = () => {
                     </p>
                 </div>
 
-                <Button
-                    leftSection={<FiUsers size={18} />}
-                    className="bg-btn-gradient hover:bg-btn-gradient rounded-xl px-4 h-11 text-sm font-semibold shadow-sm border-0"
-                    onClick={() => setSelectedMember(members[0])}
-                    disabled={!debouncedSearch.trim() || members.length === 0}
-                    aria-label={t('attendance.addAction')}
-                >
-                    {t('attendance.addAction')}
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Badge color={syncBadge.color} variant="light" radius="sm">
+                        {syncBadge.label}
+                    </Badge>
+
+                    <Button
+                        leftSection={<FiUsers size={18} />}
+                        className="bg-btn-gradient hover:bg-btn-gradient rounded-xl px-4 h-11 text-sm font-semibold shadow-sm border-0"
+                        onClick={() => handleSelectMember(members[0]?.member)}
+                        disabled={!debouncedSearch.trim() || members.length === 0}
+                        aria-label={t('attendance.addAction')}
+                    >
+                        {t('attendance.addAction')}
+                    </Button>
+                </div>
             </div>
 
             {notice && (
@@ -367,6 +492,8 @@ const Attendance = () => {
                     variant="light"
                     title={notice.type === 'error' ? t('attendance.errorTitle') : notice.type === 'info' ? t('attendance.offlineSavedTitle') : t('common.success')}
                     radius="md"
+                    withCloseButton
+                    onClose={() => setNotice(null)}
                 >
                     {noticeMessage}
                 </Alert>
@@ -381,11 +508,6 @@ const Attendance = () => {
                             </Text>
                             <Text size="xs" c="dimmed">{t('attendance.searchSubtitle')}</Text>
                         </div>
-                        {pendingSyncState && (
-                            <Badge color="yellow" variant="light">
-                                {t('attendance.pendingSync')}
-                            </Badge>
-                        )}
                     </div>
 
                     <SearchInput
@@ -399,52 +521,43 @@ const Attendance = () => {
                         }}
                     />
 
-                    {isSearchingMembers && (
-                        <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-900 px-3 py-2 text-xs text-slate-600 dark:text-slate-300">
-                            {t('attendance.memberSearchLoading')}
-                        </div>
-                    )}
-
-                    {memberSearchErrorMessage && (
-                        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                            {memberSearchErrorMessage}
-                        </div>
-                    )}
-
                     {!debouncedSearch.trim() && !selectedMember && (
                         <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
                             {t('attendance.searchHint')}
                         </div>
                     )}
 
-                    {debouncedSearch.trim() && !isSearchingMembers && members.length > 0 && (
+                    {debouncedSearch.trim() && members.length > 0 && (
                         <div className="mt-4 space-y-2">
-                            {members.slice(0, 6).map((member) => {
+                            {members.slice(0, 6).map(({ member }) => {
                                 const memberMeta = getLocalizedMemberMeta(member, t, language);
                                 const isSelected = selectedMemberInfo?.id === memberMeta.id;
-                                const memberStatus = attendanceStatusMeta[memberMeta.attendanceStatus] || attendanceStatusMeta.not_coming;
+                                const isExpired = isExpiredSubscription(member);
 
                                 return (
                                     <button
                                         key={memberMeta.id ?? member.id ?? memberMeta.phone ?? memberMeta.name}
                                         type="button"
-                                        onClick={() => setSelectedMember(member)}
+                                        onClick={() => handleSelectMember(member)}
                                         aria-pressed={isSelected}
                                         className={`w-full rounded-xl border px-3 py-3 text-start transition hover:border-[#85F40F] hover:bg-[#f4feea] dark:hover:bg-slate-900 ${isSelected ? 'border-[#85F40F] bg-[#f4feea] dark:bg-slate-900' : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-[#0c101d]'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <Avatar size={36} src={memberMeta.photo || undefined} radius="xl" color="green">
+                                            <Avatar size={36} src={memberMeta.photo || undefined} radius="xl" color={isExpired ? 'red' : 'green'}>
                                                 {memberMeta.name?.charAt(0)?.toUpperCase() || 'M'}
                                             </Avatar>
                                             <div className="min-w-0 flex-1">
                                                 <div className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{memberMeta.name}</div>
                                                 <div className="truncate text-xs text-slate-500 dark:text-slate-400">{memberMeta.phone || '—'}</div>
                                             </div>
-                                            {USE_MOCK_ATTENDANCE && (
-                                                <Badge color={memberStatus.color} variant="light" radius="sm" style={{ textTransform: 'none' }}>
-                                                    {t(memberStatus.key)}
-                                                </Badge>
-                                            )}
+                                            <Badge
+                                                color={isExpired ? 'red' : 'green'}
+                                                variant="light"
+                                                radius="sm"
+                                                style={{ textTransform: 'none' }}
+                                            >
+                                                {isExpired ? t('common.expired') : t('common.active')}
+                                            </Badge>
                                         </div>
                                     </button>
                                 );
@@ -452,7 +565,7 @@ const Attendance = () => {
                         </div>
                     )}
 
-                    {debouncedSearch.trim() && !isSearchingMembers && members.length === 0 && !memberSearchErrorMessage && (
+                    {debouncedSearch.trim() && members.length === 0 && (
                         <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
                             {t('attendance.noMemberFound')}
                         </div>
@@ -467,66 +580,82 @@ const Attendance = () => {
                     {selectedMemberInfo ? (
                         <Stack gap="sm" className="mt-4">
                             <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-900/50">
-                                <Avatar size={46} src={selectedMemberInfo.photo || undefined} radius="xl" color="green">
+                                <Avatar size={46} src={selectedMemberInfo.photo || undefined} radius="xl" color={isCurrentMemberExpired ? 'red' : 'green'}>
                                     {selectedMemberInfo.name?.charAt(0)?.toUpperCase() || 'M'}
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                     <Text fw={700} className="truncate text-slate-800 dark:text-slate-100">{selectedMemberInfo.name}</Text>
                                     <Text size="xs" c="dimmed" className="truncate">{selectedMemberInfo.phone || '—'}</Text>
                                 </div>
+                                <Badge
+                                    color={isCurrentMemberExpired ? 'red' : 'green'}
+                                    variant="light"
+                                    radius="sm"
+                                    style={{ textTransform: 'none' }}
+                                >
+                                    {isCurrentMemberExpired ? t('common.expired') : t('common.active')}
+                                </Badge>
                             </div>
 
+                            {isCurrentMemberExpired && (
+                                <Alert color="red" variant="light" icon={<HiExclamationTriangle size={18} />}>
+                                    {t('attendance.expiredWarning') || 'Subscription expired. Renewal required!'}
+                                </Alert>
+                            )}
+
+                            {isCurrentMemberAlreadyCheckedIn && !isCurrentMemberExpired && (
+                                <Alert color="yellow" variant="light" icon={<FiCheckCircle size={18} />}>
+                                    {t('attendance.alreadyCheckedIn') || 'Member is already checked in today.'}
+                                </Alert>
+                            )}
+
                             <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
-                                <div className="flex items-center gap-2">
-                                    <span>{t('attendance.status')}:</span>
-                                    <Badge
-                                        color={attendanceStatusMeta[selectedMemberInfo.attendanceStatus]?.color || 'gray'}
-                                        variant="light"
-                                        radius="sm"
-                                        style={{ textTransform: 'none' }}
-                                    >
-                                        {t(attendanceStatusMeta[selectedMemberInfo.attendanceStatus]?.key || 'attendance.notComing')}
-                                    </Badge>
-                                </div>
-                                {selectedMemberInfo.checkInTime && (
+                                {selectedMemberInfo.lastAttendance && (
+                                    <div>
+                                        {t('communication.lastAttendance')}: {selectedMemberInfo.lastAttendance}
+                                    </div>
+                                )}
+                                {selectedMemberInfo.checkInTime && isCurrentMemberAlreadyCheckedIn && (
                                     <div>
                                         {t('attendance.checkInTime')}: {formatTime(selectedMemberInfo.checkInTime, locale)}
                                     </div>
                                 )}
                             </div>
 
-                            {USE_MOCK_ATTENDANCE && (
-                                <div className="space-y-2">
-                                    <Text size="sm" fw={600} className="text-slate-700 dark:text-slate-200">
-                                        {t('attendance.attendanceStatus')}
-                                    </Text>
-                                    <SegmentedControl
-                                        fullWidth
-                                        value={selectedMemberInfo.attendanceStatus}
-                                        onChange={handleAttendanceStatusChange}
-                                        data={[
-                                            { label: t('attendance.present'), value: 'present' },
-                                            { label: t('attendance.late'), value: 'late' },
-                                            { label: t('attendance.notComing'), value: 'not_coming' },
-                                        ]}
-                                    />
-                                </div>
-                            )}
-
-                            {(!USE_MOCK_ATTENDANCE || selectedMemberInfo.attendanceStatus !== 'not_coming') && (
-                                <Button
+                            <div className="space-y-2">
+                                <Text size="sm" fw={600} className="text-slate-700 dark:text-slate-200">
+                                    {t('attendance.attendanceStatus')}
+                                </Text>
+                                <SegmentedControl
                                     fullWidth
-                                    type="button"
-                                    loading={isSubmittingCheckIn}
-                                    loaderProps={{ type: 'dots' }}
-                                    onClick={handleCheckIn}
-                                    disabled={USE_MOCK_ATTENDANCE}
-                                    className="h-11 rounded-xl bg-btn-gradient text-sm font-semibold"
-                                    aria-label={t(USE_MOCK_ATTENDANCE ? 'attendance.checkedIn' : 'attendance.checkIn')}
-                                >
-                                    {t(USE_MOCK_ATTENDANCE ? 'attendance.checkedIn' : 'attendance.checkIn')}
-                                </Button>
-                            )}
+                                    value={selectedStatus}
+                                    onChange={handleAttendanceStatusChange}
+                                    data={[
+                                        { label: t('attendance.present'), value: 'present' },
+                                        { label: t('attendance.late'), value: 'late' },
+                                        { label: t('attendance.notComing'), value: 'not_coming' },
+                                    ]}
+                                />
+                            </div>
+
+                            <Button
+                                fullWidth
+                                type="button"
+                                loading={isSubmittingCheckIn}
+                                loaderProps={{ type: 'dots' }}
+                                onClick={handleCheckIn}
+                                disabled={isSubmittingCheckIn || isCurrentMemberExpired || isCurrentMemberAlreadyCheckedIn}
+                                className="h-11 rounded-xl bg-btn-gradient text-sm font-semibold disabled:opacity-50"
+                                aria-label={t('attendance.checkIn')}
+                            >
+                                {isSubmittingCheckIn
+                                    ? t('common.loading')
+                                    : isCurrentMemberExpired
+                                        ? t('common.expired')
+                                        : isCurrentMemberAlreadyCheckedIn
+                                            ? t('attendance.checkedIn')
+                                            : t('attendance.checkIn')}
+                            </Button>
                         </Stack>
                     ) : (
                         <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
@@ -547,6 +676,24 @@ const Attendance = () => {
                         {presentCount}
                     </div>
                 </div>
+
+                <div className="flex flex-wrap gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <span>Pending: {syncState.pendingCount}</span>
+                    <span>•</span>
+                    <span>Synced: {syncState.syncedCount}</span>
+                    <span>•</span>
+                    <span>Last Sync: {syncState.lastSyncAt ? new Date(syncState.lastSyncAt).toLocaleTimeString() : '—'}</span>
+                </div>
+
+                <Button
+                    fullWidth
+                    type="button"
+                    className="mt-4 h-11 rounded-xl bg-btn-gradient text-sm font-semibold"
+                    onClick={() => syncPendingMockRecords()}
+                    disabled={syncState.status === 'syncing' || syncState.pendingCount === 0}
+                >
+                    {syncState.status === 'syncing' ? 'Syncing...' : syncState.pendingCount > 0 ? `Sync Attendance (${syncState.pendingCount})` : 'Sync Attendance'}
+                </Button>
             </Card>
 
             <Card className="rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#0e1517] shadow-sm">
@@ -556,23 +703,7 @@ const Attendance = () => {
                     </Text>
                 </div>
 
-                {attendanceErrorMessage ? (
-                    renderApiErrorAlert(attendanceErrorMessage)
-                ) : isLoadingAttendance ? (
-                    <Table.ScrollContainer minWidth={600}>
-                        <Table>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th>{t('attendance.memberName')}</Table.Th>
-                                    <Table.Th>{t('attendance.phone')}</Table.Th>
-                                    <Table.Th>{t('attendance.checkInTime')}</Table.Th>
-                                    <Table.Th>{t('attendance.status')}</Table.Th>
-                                </Table.Tr>
-                            </Table.Thead>
-                            <TableSkeleton colCount={4} rowCount={5} />
-                        </Table>
-                    </Table.ScrollContainer>
-                ) : attendanceList.length === 0 ? (
+                {attendanceList.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-900/50">
                         <Text fw={600} className="text-slate-700 dark:text-slate-200">
                             {t('attendance.emptyTitle')}
@@ -594,9 +725,9 @@ const Attendance = () => {
                             </Table.Thead>
                             <Table.Tbody>
                                 {attendanceList.map((record) => {
-                                        const memberMeta = getLocalizedMemberMeta(record, t, language);
+                                    const memberMeta = getLocalizedMemberMeta(record, t, language);
                                     const checkInTime = record.checkInTime || getCheckInTime(record);
-                                        const memberStatus = attendanceStatusMeta[record.attendanceStatus] || attendanceStatusMeta.present;
+                                    const memberStatus = attendanceStatusMeta[record.attendanceStatus] || attendanceStatusMeta.present;
 
                                     return (
                                         <Table.Tr key={record.id ?? `${memberMeta.id ?? memberMeta.name}-${checkInTime}`}>
@@ -615,9 +746,16 @@ const Attendance = () => {
                                                 {checkInTime ? formatTime(checkInTime, locale) : '—'}
                                             </Table.Td>
                                             <Table.Td className="text-center">
-                                                <Badge color={memberStatus.color} variant="light" radius="sm" style={{ textTransform: 'none' }}>
-                                                    {t(memberStatus.key)}
-                                                </Badge>
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    <Badge color={memberStatus.color} variant="light" radius="sm" style={{ textTransform: 'none' }}>
+                                                        {t(memberStatus.key)}
+                                                    </Badge>
+                                                    {record.isPendingSync && (
+                                                        <Badge color="yellow" variant="outline" radius="sm" style={{ textTransform: 'none' }}>
+                                                            {t('attendance.pendingSync') || 'Pending Sync'}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </Table.Td>
                                         </Table.Tr>
                                     );
@@ -627,8 +765,6 @@ const Attendance = () => {
                     </Table.ScrollContainer>
                 )}
             </Card>
-
-           
         </div>
     );
 };
