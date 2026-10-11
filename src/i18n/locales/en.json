@@ -101,7 +101,22 @@
     "toggleTheme": "Toggle theme",
     "toggleNavigation": "Toggle navigation menu",
     "openProfileMenu": "Open profile menu",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "saveChanges": "Save Changes",
+    "days": "days",
+    "retry": "Retry",
+    "noResults": "No matching results",
+    "noResultsHint": "Try a different search or filter.",
+    "dueToday": "Today",
+    "daysLate_one": "{{count}} day late",
+    "daysLate_other": "{{count}} days late",
+    "inDays_one": "In {{count}} day",
+    "inDays_other": "In {{count}} days",
+    "dueStatus": {
+      "overdue": "Overdue",
+      "due": "Due today",
+      "upcoming": "Upcoming"
+    }
   },
   "dashboard": {
     "title": "Gym Overview",
@@ -392,12 +407,71 @@
     "purchaseDate": "Purchase Date",
     "lastMaintenance": "Last Service Date",
     "nextDue": "Next Due Date",
-    "maintenanceDue": "Maintenance Required"
+    "maintenanceDue": "Maintenance Required",
+    "subtitle": "Equipment registry with maintenance schedules.",
+    "editEquipment": "Edit Equipment",
+    "formSubtitle": "Track purchase and service dates to know when maintenance is due.",
+    "name": "Equipment name",
+    "namePlaceholder": "e.g. Treadmill T-900",
+    "lastMaintenanceHint": "Leave empty if it was never serviced",
+    "interval": "Maintenance interval",
+    "intervalHint": "How often this machine needs servicing",
+    "nextDuePreview": "Next maintenance will be due on {{date}}",
+    "neverServiced": "Never serviced",
+    "attentionSummary": "{{overdue}} overdue and {{due}} due today.",
+    "searchPlaceholder": "Search equipment...",
+    "loadError": "Could not load equipment",
+    "emptyTitle": "No equipment yet",
+    "emptyDescription": "Add your machines to start tracking their maintenance.",
+    "created": "Equipment added successfully",
+    "updated": "Equipment updated successfully",
+    "validation": {
+      "nameRequired": "Equipment name is required",
+      "nameMin": "Name must be at least {{min}} characters",
+      "nameMax": "Name cannot exceed {{max}} characters",
+      "nameTaken": "Equipment with this name already exists",
+      "purchaseDateRequired": "Purchase date is required",
+      "purchaseDateFuture": "Purchase date cannot be in the future",
+      "maintenanceBeforePurchase": "Last maintenance cannot be before the purchase date",
+      "maintenanceFuture": "Last maintenance cannot be in the future",
+      "intervalRequired": "Maintenance interval is required",
+      "intervalNumber": "Interval must be a number of days",
+      "intervalInteger": "Interval must be whole days",
+      "intervalMin": "Interval must be at least {{min}} day",
+      "intervalMax": "Interval cannot exceed {{max}} days"
+    }
   },
   "reminders": {
     "title": "Administrative Reminders",
     "addReminder": "Create Reminder",
     "dueDate": "Due Date",
-    "note": "Reminder Details"
+    "note": "Reminder Details",
+    "subtitle": "Administrative tasks and deadlines for your gym.",
+    "formSubtitle": "Keep track of administrative tasks and their deadlines.",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Pay electricity bill",
+    "notePlaceholder": "Optional details...",
+    "calendarTitle": "Calendar",
+    "calendarHint": "Select a day to see its reminders.",
+    "showingDate": "Showing reminders for {{date}}",
+    "clearDate": "Show all dates",
+    "loadError": "Could not load reminders",
+    "emptyTitle": "No reminders yet",
+    "emptyDescription": "Create a reminder so important admin tasks are never missed.",
+    "created": "Reminder created successfully",
+    "validation": {
+      "titleRequired": "Reminder title is required",
+      "titleMin": "Title must be at least {{min}} characters",
+      "titleMax": "Title cannot exceed {{max}} characters",
+      "dueDateRequired": "Due date is required",
+      "dueDatePast": "Due date cannot be in the past",
+      "dueDateTooFar": "Due date must be within {{years}} years",
+      "noteMax": "Note cannot exceed {{max}} characters"
+    }
+  },
+  "validation": {
+    "invalidDate": "Enter a valid date",
+    "dateTooOld": "Date cannot be before {{date}}",
+    "mustContainLetters": "Must contain letters, not only numbers or symbols"
   }
 }

@@ -22,6 +22,7 @@ const DynamicForm = ({
         formState: { errors, isValid, isDirty },
         reset,
         setValue,
+        setError,
         watch,
     } = useForm({
         resolver: validationSchema ? yupResolver(validationSchema) : undefined,
@@ -49,7 +50,7 @@ const DynamicForm = ({
         return 'col-span-12';
     };
 
-    const onSubmit = (data) => customSubmit?.(data, { reset, setValue });
+    const onSubmit = (data) => customSubmit?.(data, { reset, setValue, setError });
 
     const isSubmitDisabled = Boolean((!isDirty && defaultValues?.id) || !isValid || isLoading);
 
@@ -73,6 +74,7 @@ const DynamicForm = ({
                             <Controller
                                 name={fieldItem.name}
                                 control={control}
+                                rules={fieldItem.deps ? { deps: fieldItem.deps } : undefined}
                                 render={({ field }) =>
                                     fieldItem.component({
                                         field: {
