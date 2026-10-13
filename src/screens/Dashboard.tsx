@@ -4,6 +4,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { IoIosArrowBack } from "react-icons/io";
 import { HiOutlineXMark } from "react-icons/hi2";
+import { Suspense } from "react";
 import {
   RiMegaphoneLine,
   RiShieldUserLine,
