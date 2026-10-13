@@ -21,7 +21,7 @@ Welcome to the Frontend Engineering Team! This document is the single source of 
 ## 1. Initial Setup & Local Installation
 
 ### Prerequisites
-- **Node.js**: v18.0.0 or higher
+- **Node.js**: v20.9.0 or higher (required by Next.js 16)
 - **Package Manager**: `npm`
 - **Git** installed and configured with your GitHub account
 
@@ -119,19 +119,21 @@ Feature Assignment
 ```
 
 ### Folder Placement Conventions
-- Page components live in: `src/pages/<FeatureName>/index.jsx`
-- Sub-components private to a feature live in: `src/pages/<FeatureName>/components/`
+- App Router routes and layouts live in: `src/app/`
+- Feature components, hooks, API access, services, and validation live in: `src/features/<feature>/`
+- Existing dashboard UI implementations live in: `src/screens/`
 - Reusable components used across features live in: `src/components/`
-- API endpoint injections live in: `src/Service/Apis/<featureApi>.js`
+- Server-only session, permission, and backend access code lives in: `src/server/`
+- Global providers and shared hooks live in: `src/shared/`
+- Redux store setup lives in: `src/store/store.js`
 - ⚠️ **Path Casing**: Always use lowercase for folder names in imports:
   ```javascript
   // ✅ Correct
-  import Members from '../pages/Members';
+  import MembersPage from '../features/members/components/MembersPage';
   import Loader from '../components/Loader';
 
-  // ❌ INCORRECT (Breaks Vite HMR watcher on Windows)
-  import Members from '../Pages/Members';
-  import Loader from '../Components/Loader';
+  // ❌ INCORRECT (case-sensitive on production hosts)
+  import MembersPage from '../Features/Members/components/MembersPage';
   ```
 
 ---

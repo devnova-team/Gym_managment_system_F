@@ -1,6 +1,6 @@
 # 🏋️ FitPulse — Gym Management System (GMS) Frontend Dashboard
 
-A modern, multi-tenant **SaaS Gym Management System** frontend dashboard built with **React 19 + Vite + Redux Toolkit (RTK Query) + Mantine UI + Tailwind CSS**. 
+A modern, multi-tenant **SaaS Gym Management System** dashboard built with **Next.js App Router + React 19 + Redux Toolkit (RTK Query) + Mantine UI + Tailwind CSS**.
 
 The architecture follows a modular, enterprise-grade pattern inspired by the **Alegny Dashboard Architecture**:
 - Unified Dark / Light mode synchronization between Tailwind CSS and Mantine UI.
@@ -51,9 +51,8 @@ Small and medium gym facilities typically suffer from:
 
 | Domain | Technology / Library | Purpose |
 | :--- | :--- | :--- |
-| **Runtime & Bundler** | [Vite](https://vite.dev/) | Ultra-fast HMR and optimized production building |
-| **Framework** | [React 19](https://react.dev/) (JS / JSX) | Component-driven UI architecture |
-| **Routing** | [React Router DOM v7](https://reactrouter.com/) | Client-side routing, nested routes, and route guards |
+| **Framework & Runtime** | [Next.js App Router](https://nextjs.org/docs/app) + [React 19](https://react.dev/) | Server/client rendering, route handlers, and production builds |
+| **Routing** | Next.js App Router | File-system routes, nested layouts, and client-side navigation |
 | **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) + [Mantine UI v7+](https://mantine.dev/) | Utility-first styling paired with accessible Mantine UI components & hooks |
 | **State & Data Fetching** | [Redux Toolkit & RTK Query](https://redux-toolkit.js.org/) | Global state, normalized cache, automatic tag invalidation, and queries |
 | **HTTP Layer** | `fetchBaseQuery` (RTK Query) | JWT Bearer headers, language injection, and automatic 401 reauth retry |
@@ -65,77 +64,25 @@ Small and medium gym facilities typically suffer from:
 
 ## 3. Project Architecture & Folder Structure
 
-Following the modular **Alegny Dashboard** structure:
+The app uses App Router pages/layouts with feature modules and server-only API proxy code:
 
 ```
-Gym_managment_system_F/
-├── public/
-│   └── assets/                     # Static assets and branding logos
-│       └── logo.svg
-├── src/
-│   ├── AuthContext/                # Authentication & Session Management
-│   │   └── AuthProvider.jsx        # AuthContext, Cookies, inactivity timer, login/logout
-│   ├── Context/                    # Global UI Contexts
-│   │   ├── LanguageContext.jsx     # i18n initialization, language switcher, RTL/LTR sync
-│   │   └── ThemeContext.jsx        # Dark/Light mode toggle with Mantine & Tailwind sync
-│   ├── Components/                 # Shared UI Components
-│   │   ├── CustomeRoute/           # Protected and Public route guards
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   └── PublicRoute.jsx
-│   │   ├── NotFound/               # 404 error page
-│   │   ├── Loader.jsx              # Centered Mantine loader overlay
-│   │   ├── Logo.jsx                # Collapsible brand logo widget
-│   │   └── SearchInput.jsx         # Debounced search bar with clear button
-│   ├── Header/                     # Top Navigation Bar
-│   │   └── NavBar.jsx              # Search bar, language toggle, theme toggle, user menu
-│   ├── Menu/                       # Navigation Menus
-│   │   └── SharedTabs.jsx          # Reusable Mantine Tabs menu with active states
-│   ├── Pages/                      # Feature Views
-│   │   ├── Dashboard.jsx           # Main layout with collapsible sidebar & Outlet
-│   │   ├── DashboardOverview/      # Default overview KPI metrics (Feature 4)
-│   │   ├── Members/                # Members & Subscriptions (Feature 1)
-│   │   ├── Attendance/             # Attendance & Active Inside (Feature 2)
-│   │   ├── Communication/          # Segments & WhatsApp Messaging (Feature 3)
-│   │   ├── Staff/                  # Staff & Shifts (Feature 5)
-│   │   ├── Expenses/               # Operational Expenses (Feature 6 - Owner only)
-│   │   ├── Reports/                # Financial Reports (Feature 7 - Owner only)
-│   │   ├── Store/                  # Internal Store & POS (Feature 8)
-│   │   ├── Equipment/              # Equipment & Maintenance (Feature 9)
-│   │   ├── Reminders/              # Admin Reminders (Feature 10)
-│   │   └── Login/Login.jsx         # Authentication screen (Feature 0)
-│   ├── Routers/                    # Application Routing
-│   │   └── Routers.jsx             # React Router DOM configuration with lazy loading
-│   ├── Service/                    # RTK Query & State Store
-│   │   ├── baseApi.js              # Base query, headers, tagTypes, 401 reauth interceptor
-│   │   ├── Store.jsx               # Redux configureStore
-│   │   └── Apis/                   # Separated API service file per feature
-│   │       ├── authApi.js          # Feature 0: login, refresh, logout
-│   │       ├── membersApi.js       # Feature 1: members & plans CRUD, subscriptions
-│   │       ├── attendanceApi.js    # Feature 2: check-in, today list, offline sync
-│   │       ├── communicationApi.js # Feature 3: segments, WhatsApp templates
-│   │       ├── dashboardApi.js     # Feature 4: dashboard stats
-│   │       ├── staffApi.js         # Feature 5: staff, shifts, staff attendance
-│   │       ├── expensesApi.js      # Feature 6: operational expenses
-│   │       ├── reportsApi.js       # Feature 7: financial summary report
-│   │       ├── storeApi.js         # Feature 8: store products, POS sales
-│   │       ├── equipmentApi.js     # Feature 9: machines, maintenance schedules
-│   │       └── remindersApi.js     # Feature 10: administrative reminders
-│   ├── i18n/                       # Localization dictionaries
-│   │   └── locales/
-│   │       ├── en.json             # English translation strings
-│   │       └── ar.json             # Arabic translation strings
-│   ├── utils/                      # Helper Utilities
-│   │   ├── constants.js            # User roles, categories, statuses
-│   │   ├── formatters.js           # Currency, date, and time formatters
-│   │   ├── storage.js              # Offline queue helper with local_id
-│   │   └── whatsapp.js             # wa.me Click-to-Chat URL builder
-│   ├── App.jsx                     # Root application component mounting Routers
-│   ├── index.css                   # Tailwind v4 directives, Mantine CSS, RTL fonts
-│   └── main.jsx                    # Root provider hierarchy (Redux, Auth, Theme, Language, Mantine)
-├── index.html                      # HTML template with Google Fonts (Cairo & Inter)
-├── tailwind.config.js              # Custom color palette matching Alegny config keys
-├── vite.config.js                  # Vite configuration
-└── package.json
+src/
+├── app/                              # Next.js App Router pages and route handlers
+│   ├── (auth)/login/
+│   ├── (dashboard)/{members,attendance,overview}/
+│   ├── dashboard/                    # Backward-compatible /dashboard/* routes
+│   └── api/{auth,members}/            # Server-side API proxy handlers
+├── features/{auth,members,attendance}/
+│   ├── components/
+│   ├── api/
+│   ├── hooks/
+│   ├── services/
+│   └── validation/
+├── screens/                           # Existing dashboard screen implementations
+├── server/{auth,backend}/             # Server-only session, permissions, API client
+├── shared/{components,hooks}/         # Providers, auth gates, and shared hooks
+└── store/store.js                    # Redux store factory
 ```
 
 ---
@@ -143,7 +90,7 @@ Gym_managment_system_F/
 ## 4. Getting Started & Installation
 
 ### Prerequisites
-- **Node.js**: v18.0.0 or higher
+- **Node.js**: v20.9.0 or higher
 - **npm**: v9.0.0 or higher
 
 ### 1. Clone & Install
@@ -154,10 +101,11 @@ npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file in the root directory:
+Create a `.env.local` file in the root directory to configure the upstream gym API:
 ```env
-VITE_API_BASE_URL=http://localhost:8000/api
+GYM_API_BASE_URL=http://localhost:8000/api
 ```
+When unset, API proxy routes return `503` with a configuration message.
 
 ### 3. Run Development Server
 ```bash
