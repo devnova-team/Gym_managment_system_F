@@ -141,11 +141,11 @@ const Login = () => {
         </div>
 
         {/* UnComment when the server start */}
-        {/* {serverError && (
+        {serverError && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-900/60">
             {t(serverError)}
           </div>
-        )} */}
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

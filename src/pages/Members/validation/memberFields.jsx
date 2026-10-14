@@ -7,6 +7,7 @@ import {
   FiImage,
   FiPackage,
 } from "react-icons/fi";
+import SelectField from "../../../components/Forms/SelectField";
 
 // =====================================================================
 // Member Form Fields
