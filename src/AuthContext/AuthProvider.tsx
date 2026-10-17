@@ -19,7 +19,9 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    setIsAuthenticated(Cookies.get("isAuthenticated") === "true" && !!Cookies.get("token"));
+    setIsAuthenticated(
+      Cookies.get("isAuthenticated") === "true" && !!Cookies.get("token"),
+    );
     setIsReady(true);
   }, []);
 
@@ -83,15 +85,27 @@ export const AuthProvider = ({ children }) => {
     if (!response) {
       return false;
     }
+
     // HttpOnly Cookie
     const expiry = 1 / 3; // 8 hours hard limit
 
-    const userData = response?.data?.user;
+    // ← CHANGED: الـ backend بيرجّع الـ role والـ gym_id مباشرة في data،
+    // مفيش user object. فبنبني الـ user object من الـ data.
     const dataAccessToken = response?.data?.access_token;
+    const role = response?.data?.role;
+    const gymId = response?.data?.gym_id;
 
-    if (!userData || !dataAccessToken) {
+    if (!dataAccessToken) {
       return false;
     }
+
+    const userData = {
+      id: null, // ← CHANGED: الباك إند مش بيرجّعه
+      name: null, // ← CHANGED: الباك إند مش بيرجّعه
+      email: null, // ← CHANGED: الباك إند مش بيرجّعه
+      role: role || null,
+      gym_id: gymId || null,
+    };
 
     Cookies.set("user", JSON.stringify(userData), { expires: expiry });
     Cookies.set("token", dataAccessToken, { expires: expiry });

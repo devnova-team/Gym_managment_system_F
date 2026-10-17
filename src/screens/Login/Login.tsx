@@ -14,51 +14,14 @@ const Login = () => {
   const { login } = useContext(AuthContext);
   const [loginApi, { isLoading }] = useLoginMutation();
 
-  const [identifier, setIdentifier] = useState("owner@fitpulse.com");
+  const [identifier, setIdentifier] = useState("owner@gmail.com"); // ← CHANGED: بيبدأ بإيميل حقيقي
   const [password, setPassword] = useState("password123");
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
 
-  //   // ============================================================
-  //   // PRODUCTION MODE - فعّل البلوك ده لما الباك إند يشتغل
-  //   // ============================================================
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setErrors({});
-  //   setServerError("");
-
-  //   const validationErrors = checkForm(identifier, password);
-  //   if (Object.keys(validationErrors).length > 0) {
-  //     setErrors(validationErrors);
-  //     return;
-  //   }
-  //   // ============================================================
-
-  //   try {
-  //     const response = await loginApi({ identifier, password }).unwrap();
-  //     const ok = login(response);
-  //     if (ok) {
-  //       navigate("/dashboard");
-  //     } else {
-  //       setServerError("auth.errors.serverError");
-  //     }
-  //   } catch (err) {
-  //     if (err?.status === 401) {
-  //       setServerError("auth.errors.invalidCredentials");
-  //     } else if (err?.status) {
-  //       setServerError("auth.errors.serverError");
-  //     } else {
-  //       setServerError("auth.errors.networkError");
-  //     }
-  //   }
-  //   // ============================================================
-  // };
-
   // ============================================================
-  // NEW LOGIC - Demo Authentication (Email + Password Only)
+  // PRODUCTION MODE - شغال
   // ============================================================
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -71,32 +34,77 @@ const Login = () => {
     }
 
     try {
-      const isOwner = identifier.trim().toLowerCase().includes("owner");
+      // ← CHANGED: الباك إند بياخد email بدل identifier.
+      // بنبعت { email: identifier, password } بدل { identifier, password }.
+      const response = await loginApi({
+        email: identifier,
+        password,
+      }).unwrap();
 
-      const demoResponse = {
-        data: {
-          user: {
-            id: isOwner ? 1 : 2,
-            name: isOwner ? "Captain Ahmed" : "Sarah Receptionist",
-            email: identifier.trim(),
-            role: isOwner ? "owner" : "receptionist",
-            gym_id: "gym-001",
-          },
-          access_token: "demo-jwt-token-" + Date.now(), // 👈 الاسم الصح
-        },
-      };
-
-      const ok = login(demoResponse);
-
+      const ok = login(response);
       if (ok) {
-        router.push("/dashboard");
+        // ← CHANGED: useRouter من next/navigation، و router.push بدل navigate
+        router.push("/dashboard/overview");
       } else {
         setServerError("auth.errors.serverError");
       }
     } catch (err) {
-      setServerError("auth.errors.serverError");
+      // ← CHANGED: ضفنا معالجة 422 (validation errors من السيرفر)
+      if (err?.status === 401) {
+        setServerError("auth.errors.invalidCredentials");
+      } else if (err?.status === 422) {
+        setServerError("auth.errors.validationFailed");
+      } else if (err?.status) {
+        setServerError("auth.errors.serverError");
+      } else {
+        setServerError("auth.errors.networkError");
+      }
     }
   };
+  // ============================================================
+
+  // ============================================================
+  // DEMO MODE - معلّق (استخدمه بس لو الباك إند وقع)
+  // ============================================================
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setErrors({});
+  //   setServerError("");
+  //
+  //   const validationErrors = checkForm(identifier, password);
+  //   if (Object.keys(validationErrors).length > 0) {
+  //     setErrors(validationErrors);
+  //     return;
+  //   }
+  //
+  //   try {
+  //     const isOwner = identifier.trim().toLowerCase().includes("owner");
+  //
+  //     const demoResponse = {
+  //       data: {
+  //         user: {
+  //           id: isOwner ? 1 : 2,
+  //           name: isOwner ? "Captain Ahmed" : "Sarah Receptionist",
+  //           email: identifier.trim(),
+  //           role: isOwner ? "owner" : "receptionist",
+  //           gym_id: "gym-001",
+  //         },
+  //         access_token: "demo-jwt-token-" + Date.now(),
+  //       },
+  //     };
+  //
+  //     const ok = login(demoResponse);
+  //
+  //     if (ok) {
+  //       router.push("/dashboard");
+  //     } else {
+  //       setServerError("auth.errors.serverError");
+  //     }
+  //   } catch (err) {
+  //     setServerError("auth.errors.serverError");
+  //   }
+  // };
+  // ============================================================
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-[#0c101d]">
@@ -116,12 +124,11 @@ const Login = () => {
           </p>
         </div>
 
-        {/* UnComment when the server start */}
-        {/* {serverError && (
+        {serverError && (
           <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-900/60">
             {t(serverError)}
           </div>
-        )} */}
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -129,7 +136,6 @@ const Login = () => {
               {t("auth.identifier", "Email or Phone Number")}
             </label>
             <Input
-              // dir="auto"
               leftSection={<FiMail size={16} className="text-textColor" />}
               value={identifier}
               onChange={(e) => {
@@ -137,7 +143,7 @@ const Login = () => {
                 setErrors({});
                 setServerError("");
               }}
-              placeholder="owner@fitpulse.com"
+              placeholder="owner@gmail.com"
               classNames={{
                 input:
                   "rounded-xl! dark:bg-[#0c101d]! dark:text-white! dark:border-slate-800! focus:border-[#85F40F]!",
@@ -153,7 +159,6 @@ const Login = () => {
               {t("auth.password", "Password")}
             </label>
             <PasswordInput
-              // dir="auto"
               leftSection={<FiLock size={16} className="text-textColor" />}
               value={password}
               onChange={(e) => {
