@@ -23,7 +23,8 @@
     "coach": "Coach",
     "tenantLabel": "SaaS Tenant: {{id}}",
     "user": "User",
-    "role": "Role"
+    "role": "Role",
+    "subscriptions": "Subscriptions"
   },
   "auth": {
     "loginTitle": "Welcome Back",
@@ -101,7 +102,10 @@
     "toggleTheme": "Toggle theme",
     "toggleNavigation": "Toggle navigation menu",
     "openProfileMenu": "Open profile menu",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "errors": {
+      "invalidBody": "The request body is not valid JSON."
+    }
   },
   "dashboard": {
     "title": "Gym Overview",
@@ -399,5 +403,72 @@
     "addReminder": "Create Reminder",
     "dueDate": "Due Date",
     "note": "Reminder Details"
+  },
+  "subscriptions": {
+    "title": "Subscriptions",
+    "subtitle": "Create, track, and renew member subscriptions.",
+    "create": "New Subscription",
+    "createTitle": "New Subscription",
+    "createSubtitle": "Assign a plan to a member. Payment is cash only.",
+    "renew": "Renew",
+    "renewTitle": "Renew Subscription",
+    "renewSubtitle": "{{member}} — current end date: {{endDate}}",
+    "createSuccess": "Subscription created successfully.",
+    "renewSuccess": "Subscription renewed successfully.",
+    "searchPlaceholder": "Search by member name or phone...",
+    "emptyTitle": "No subscriptions yet",
+    "emptyDesc": "Create the first subscription to start tracking memberships.",
+    "noResultsTitle": "No matching subscriptions",
+    "noResultsDesc": "Try a different search or status filter.",
+    "loadErrorTitle": "Could not load subscriptions",
+    "loadErrorDesc": "Check your connection and try again.",
+    "retry": "Try again",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "daysAgo_one": "Ended {{count}} day ago",
+    "daysAgo_other": "Ended {{count}} days ago",
+    "table": {
+      "member": "Member",
+      "plan": "Plan",
+      "period": "Period",
+      "status": "Status",
+      "payment": "Payment"
+    },
+    "fields": {
+      "member": "Member",
+      "memberPlaceholder": "Search by name or phone",
+      "plan": "Plan",
+      "planPlaceholder": "Select a plan",
+      "paymentStatus": "Payment Status",
+      "paymentMethod": "Payment Method",
+      "cashOnly": "Only cash is accepted for now.",
+      "noMembersFound": "No members match this name or phone."
+    },
+    "status": {
+      "active": "Active",
+      "expiringSoon": "Expiring Soon",
+      "expired": "Expired"
+    },
+    "paymentStatus": {
+      "paid": "Paid",
+      "unpaid": "Unpaid"
+    },
+    "paymentMethod": {
+      "cash": "Cash"
+    },
+    "planTypes": {
+      "daily": "Daily",
+      "2x_week": "2x / week",
+      "3x_week": "3x / week"
+    },
+    "errors": {
+      "memberIdRequired": "Please select a member.",
+      "planIdRequired": "Please select a plan.",
+      "subscriptionIdRequired": "Please select a subscription.",
+      "invalidId": "Invalid selection.",
+      "paymentStatusRequired": "Please select a payment status.",
+      "paymentStatusInvalid": "Payment status must be paid or unpaid.",
+      "paymentMethodInvalid": "Only cash payment is accepted."
+    }
   }
 }

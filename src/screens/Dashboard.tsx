@@ -12,6 +12,7 @@ import {
   RiStore2Line,
   RiNotification3Line,
   RiUserStarLine,
+  RiVipCrownLine,
 } from "react-icons/ri";
 import { FiActivity, FiCalendar, FiUsers } from "react-icons/fi";
 import { MdOutlineFitnessCenter } from "react-icons/md";
@@ -33,6 +34,12 @@ const TAB_VALUES_TEMPLATE = [
     value: "members",
     icon: <RiUserStarLine size={20} />,
     labelKey: "nav.members",
+  },
+  {
+    id: 11,
+    value: "subscriptions",
+    icon: <RiVipCrownLine size={20} />,
+    labelKey: "nav.subscriptions",
   },
   {
     id: 3,

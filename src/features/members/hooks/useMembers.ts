@@ -10,6 +10,9 @@ export {
     useCreatePlanMutation,
     useUpdatePlanMutation,
     useDeletePlanMutation,
+} from '../../../Service/Apis/membersApi';
+
+export {
     useCreateSubscriptionMutation,
     useRenewSubscriptionMutation,
-} from '../../../Service/Apis/membersApi';
+} from '../../../Service/Apis/subscriptionsApi';
