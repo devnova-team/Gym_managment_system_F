@@ -19,7 +19,18 @@ const getBackendUrl = (path, search) => {
     return target;
 };
 
-export async function proxyBackendRequest(request, path) {
+const getRequestBody = async (request, body) => {
+    if (body !== undefined) return JSON.stringify(body);
+    if (['GET', 'HEAD'].includes(request.method)) return undefined;
+    return request.arrayBuffer();
+};
+
+/**
+ * Forwards the request to the upstream backend.
+ * Pass `options.body` to send an already-parsed (e.g. validated) JSON body
+ * instead of the raw request body, which can only be read once.
+ */
+export async function proxyBackendRequest(request, path, options: { body?: unknown } = {}) {
     const target = getBackendUrl(path, new URL(request.url).search);
     if (!target) {
         return Response.json(
@@ -40,11 +51,12 @@ export async function proxyBackendRequest(request, path) {
         const value = request.headers.get(name);
         if (value) headers.set(name, value);
     }
+    if (options.body !== undefined) headers.set('content-type', 'application/json');
 
     const response = await fetch(target, {
         method: request.method,
         headers,
-        body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.arrayBuffer(),
+        body: await getRequestBody(request, options.body),
         cache: 'no-store',
         redirect: 'manual',
     });

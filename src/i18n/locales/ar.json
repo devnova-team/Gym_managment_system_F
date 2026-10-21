@@ -23,7 +23,8 @@
     "coach": "المدرب",
     "tenantLabel": "النادي: {{id}}",
     "user": "مستخدم",
-    "role": "الدور"
+    "role": "الدور",
+    "subscriptions": "الاشتراكات"
   },
   "auth": {
     "loginTitle": "مرحباً بك مجدداً",
@@ -101,7 +102,10 @@
     "toggleTheme": "تبديل المظهر",
     "toggleNavigation": "تبديل قائمة التنقل",
     "openProfileMenu": "فتح قائمة الملف الشخصي",
-    "clearSearch": "مسح البحث"
+    "clearSearch": "مسح البحث",
+    "errors": {
+      "invalidBody": "بيانات الطلب غير صالحة."
+    }
   },
   "dashboard": {
     "title": "نظرة عامة على الجيم",
@@ -397,5 +401,80 @@
     "addReminder": "إنشاء تذكير",
     "dueDate": "تاريخ الاستحقاق",
     "note": "تفاصيل التذكير"
+  },
+  "subscriptions": {
+    "title": "الاشتراكات",
+    "subtitle": "إنشاء ومتابعة وتجديد اشتراكات الأعضاء.",
+    "create": "اشتراك جديد",
+    "createTitle": "اشتراك جديد",
+    "createSubtitle": "اختر العضو والخطة. الدفع نقدًا فقط.",
+    "renew": "تجديد",
+    "renewTitle": "تجديد الاشتراك",
+    "renewSubtitle": "{{member}} — تاريخ الانتهاء الحالي: {{endDate}}",
+    "createSuccess": "تم إنشاء الاشتراك بنجاح.",
+    "renewSuccess": "تم تجديد الاشتراك بنجاح.",
+    "searchPlaceholder": "ابحث باسم العضو أو رقم الموبايل...",
+    "emptyTitle": "لا توجد اشتراكات بعد",
+    "emptyDesc": "أنشئ أول اشتراك لبدء متابعة العضويات.",
+    "noResultsTitle": "لا توجد نتائج مطابقة",
+    "noResultsDesc": "جرّب بحثًا أو فلتر حالة مختلف.",
+    "loadErrorTitle": "تعذّر تحميل الاشتراكات",
+    "loadErrorDesc": "تأكد من الاتصال وحاول مرة أخرى.",
+    "retry": "حاول مرة أخرى",
+    "daysLeft_zero": "ينتهي اليوم",
+    "daysLeft_one": "باقي يوم واحد",
+    "daysLeft_two": "باقي يومان",
+    "daysLeft_few": "باقي {{count}} أيام",
+    "daysLeft_many": "باقي {{count}} يومًا",
+    "daysLeft_other": "باقي {{count}} يوم",
+    "daysAgo_zero": "انتهى اليوم",
+    "daysAgo_one": "انتهى منذ يوم",
+    "daysAgo_two": "انتهى منذ يومين",
+    "daysAgo_few": "انتهى منذ {{count}} أيام",
+    "daysAgo_many": "انتهى منذ {{count}} يومًا",
+    "daysAgo_other": "انتهى منذ {{count}} يوم",
+    "table": {
+      "member": "العضو",
+      "plan": "الخطة",
+      "period": "المدة",
+      "status": "الحالة",
+      "payment": "الدفع"
+    },
+    "fields": {
+      "member": "العضو",
+      "memberPlaceholder": "ابحث بالاسم أو الموبايل",
+      "plan": "الخطة",
+      "planPlaceholder": "اختر الخطة",
+      "paymentStatus": "حالة الدفع",
+      "paymentMethod": "طريقة الدفع",
+      "cashOnly": "الدفع نقدًا فقط حاليًا.",
+      "noMembersFound": "لا يوجد عضو بهذا الاسم أو الرقم."
+    },
+    "status": {
+      "active": "نشط",
+      "expiringSoon": "ينتهي قريبًا",
+      "expired": "منتهي"
+    },
+    "paymentStatus": {
+      "paid": "مدفوع",
+      "unpaid": "غير مدفوع"
+    },
+    "paymentMethod": {
+      "cash": "نقدًا"
+    },
+    "planTypes": {
+      "daily": "يومي",
+      "2x_week": "مرتين أسبوعيًا",
+      "3x_week": "3 مرات أسبوعيًا"
+    },
+    "errors": {
+      "memberIdRequired": "من فضلك اختر العضو.",
+      "planIdRequired": "من فضلك اختر الخطة.",
+      "subscriptionIdRequired": "من فضلك اختر الاشتراك.",
+      "invalidId": "اختيار غير صالح.",
+      "paymentStatusRequired": "من فضلك اختر حالة الدفع.",
+      "paymentStatusInvalid": "حالة الدفع يجب أن تكون مدفوع أو غير مدفوع.",
+      "paymentMethodInvalid": "الدفع نقدًا فقط."
+    }
   }
 }

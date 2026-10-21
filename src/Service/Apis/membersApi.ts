@@ -82,24 +82,6 @@ export const membersApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Plans"],
     }),
-    // POST /api/subscriptions - Add subscription for member (payment_method: "cash")
-    createSubscription: builder.mutation({
-      query: (subscriptionData) => ({
-        url: "/subscriptions",
-        method: "POST",
-        body: { ...subscriptionData, payment_method: "cash" },
-      }),
-      invalidatesTags: ["Subscriptions", "Members", "Dashboard", "Reports"],
-    }),
-    // POST /api/subscriptions/renew - Renew subscription (supports early renewal from old end_date)
-    renewSubscription: builder.mutation({
-      query: (renewalData) => ({
-        url: "/subscriptions/renew",
-        method: "POST",
-        body: renewalData,
-      }),
-      invalidatesTags: ["Subscriptions", "Members", "Dashboard", "Reports"],
-    }),
   }),
 });
 
@@ -113,6 +95,4 @@ export const {
   useCreatePlanMutation,
   useUpdatePlanMutation,
   useDeletePlanMutation,
-  useCreateSubscriptionMutation,
-  useRenewSubscriptionMutation,
 } = membersApi;
