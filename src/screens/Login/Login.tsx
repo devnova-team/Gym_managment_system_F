@@ -14,8 +14,8 @@ const Login = () => {
   const { login } = useContext(AuthContext);
   const [loginApi, { isLoading }] = useLoginMutation();
 
-  const [identifier, setIdentifier] = useState("owner@gmail.com"); // ← CHANGED: بيبدأ بإيميل حقيقي
-  const [password, setPassword] = useState("password123");
+  const [identifier, setIdentifier] = useState(""); // ← CHANGED: بيبدأ بإيميل حقيقي
+  const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
 
@@ -61,50 +61,6 @@ const Login = () => {
       }
     }
   };
-  // ============================================================
-
-  // ============================================================
-  // DEMO MODE - معلّق (استخدمه بس لو الباك إند وقع)
-  // ============================================================
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setErrors({});
-  //   setServerError("");
-  //
-  //   const validationErrors = checkForm(identifier, password);
-  //   if (Object.keys(validationErrors).length > 0) {
-  //     setErrors(validationErrors);
-  //     return;
-  //   }
-  //
-  //   try {
-  //     const isOwner = identifier.trim().toLowerCase().includes("owner");
-  //
-  //     const demoResponse = {
-  //       data: {
-  //         user: {
-  //           id: isOwner ? 1 : 2,
-  //           name: isOwner ? "Captain Ahmed" : "Sarah Receptionist",
-  //           email: identifier.trim(),
-  //           role: isOwner ? "owner" : "receptionist",
-  //           gym_id: "gym-001",
-  //         },
-  //         access_token: "demo-jwt-token-" + Date.now(),
-  //       },
-  //     };
-  //
-  //     const ok = login(demoResponse);
-  //
-  //     if (ok) {
-  //       router.push("/dashboard");
-  //     } else {
-  //       setServerError("auth.errors.serverError");
-  //     }
-  //   } catch (err) {
-  //     setServerError("auth.errors.serverError");
-  //   }
-  // };
-  // ============================================================
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-[#0c101d]">
