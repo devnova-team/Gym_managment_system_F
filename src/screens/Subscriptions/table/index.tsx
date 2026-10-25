@@ -11,13 +11,14 @@ const TABLE_HEADERS = [
     { labelKey: 'subscriptions.table.period', width: '22%' },
     { labelKey: 'subscriptions.table.status', width: '14%' },
     { labelKey: 'subscriptions.table.payment', width: '10%' },
-    { labelKey: 'common.actions', width: '12%', align: 'center' },
 ];
+const ACTIONS_HEADER = { labelKey: 'common.actions', width: '12%', align: 'center' };
 
 const SubscriptionsTable = ({
     subscriptions,
     isLoading,
     hasAnySubscription,
+    canManage,
     page,
     setPage,
     totalPages,
@@ -30,8 +31,9 @@ const SubscriptionsTable = ({
     const headerRef = useRef(null);
 
     const headers = useMemo(
-        () => TABLE_HEADERS.map(({ labelKey, ...rest }) => ({ label: t(labelKey), ...rest })),
-        [t],
+        () => (canManage ? [...TABLE_HEADERS, ACTIONS_HEADER] : TABLE_HEADERS)
+            .map(({ labelKey, ...rest }) => ({ label: t(labelKey), ...rest })),
+        [t, canManage],
     );
 
     return (
@@ -58,10 +60,10 @@ const SubscriptionsTable = ({
                             emptyIcon={<RiVipCrownLine size={28} />}
                             emptyMessage={t(hasAnySubscription ? 'subscriptions.noResultsTitle' : 'subscriptions.emptyTitle')}
                             emptyDescription={t(hasAnySubscription ? 'subscriptions.noResultsDesc' : 'subscriptions.emptyDesc')}
-                            emptyActionLabel={hasAnySubscription ? undefined : t('subscriptions.create')}
+                            emptyActionLabel={canManage && !hasAnySubscription ? t('subscriptions.create') : undefined}
                             onEmptyAction={onCreate}
                             renderRow={(item) => (
-                                <SubscriptionRow key={item.id} item={item} locale={locale} onRenew={onRenew} />
+                                <SubscriptionRow key={item.id} item={item} locale={locale} onRenew={canManage ? onRenew : undefined} />
                             )}
                         />
                     )}

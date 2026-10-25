@@ -475,6 +475,75 @@
       "paymentStatusRequired": "من فضلك اختر حالة الدفع.",
       "paymentStatusInvalid": "حالة الدفع يجب أن تكون مدفوع أو غير مدفوع.",
       "paymentMethodInvalid": "الدفع نقدًا فقط."
+    },
+    "tabs": {
+      "subscriptions": "الاشتراكات",
+      "plans": "الخطط"
+    }
+  },
+  "plans": {
+    "create": "خطة جديدة",
+    "createTitle": "خطة جديدة",
+    "editTitle": "تعديل الخطة",
+    "formSubtitle": "حدد نوع الخطة ومدتها وسعرها ومتى يعتبر العضو غير نشط.",
+    "createSuccess": "تم إنشاء الخطة بنجاح.",
+    "updateSuccess": "تم تعديل الخطة بنجاح.",
+    "deleteSuccess": "تم حذف الخطة بنجاح.",
+    "deleteTitle": "حذف الخطة؟",
+    "deleteDesc": "هل أنت متأكد من حذف \"{{name}}\"؟ لا يمكن حذف خطة عليها اشتراكات نشطة.",
+    "emptyTitle": "لا توجد خطط بعد",
+    "emptyDescOwner": "أنشئ أول خطة (شهرية، سنوية، ...) لبدء بيع الاشتراكات.",
+    "emptyDescStaff": "اطلب من صاحب الجيم إنشاء الخطط.",
+    "loadErrorTitle": "تعذّر تحميل الخطط",
+    "daysCount_zero": "{{count}} يوم",
+    "daysCount_one": "يوم واحد",
+    "daysCount_two": "يومان",
+    "daysCount_few": "{{count}} أيام",
+    "daysCount_many": "{{count}} يومًا",
+    "daysCount_other": "{{count}} يوم",
+    "durations": {
+      "monthly": "شهري",
+      "quarterly": "3 شهور",
+      "semiAnnual": "6 شهور",
+      "yearly": "سنوي"
+    },
+    "table": {
+      "name": "الخطة",
+      "type": "النوع",
+      "duration": "المدة",
+      "price": "السعر",
+      "absenceThreshold": "غير نشط بعد"
+    },
+    "fields": {
+      "name": "اسم الخطة",
+      "namePlaceholder": "مثال: شهري ذهبي",
+      "type": "نوع الخطة",
+      "price": "السعر",
+      "duration": "المدة (بالأيام)",
+      "durationHint": "أو اختر مدة جاهزة بالأسفل.",
+      "absenceThreshold": "غير نشط بعد (أيام)",
+      "absenceHint": "عدد أيام الغياب قبل اعتبار العضو غير نشط."
+    },
+    "errors": {
+      "nameRequired": "من فضلك اكتب اسم الخطة.",
+      "nameShort": "اسم الخطة لازم يكون حرفين على الأقل.",
+      "nameLong": "اسم الخطة لازم يكون 100 حرف بحد أقصى.",
+      "typeRequired": "من فضلك اختر نوع الخطة.",
+      "typeInvalid": "نوع خطة غير صالح.",
+      "numberInvalid": "من فضلك اكتب رقم صحيح.",
+      "wholeNumber": "من فضلك اكتب رقم بدون كسور.",
+      "durationRequired": "من فضلك اكتب المدة.",
+      "durationMin": "المدة لازم تكون يوم على الأقل.",
+      "durationMax": "المدة بحد أقصى 3650 يوم.",
+      "priceRequired": "من فضلك اكتب السعر.",
+      "pricePositive": "السعر لازم يكون أكبر من صفر.",
+      "priceMax": "السعر كبير جدًا.",
+      "absenceRequired": "من فضلك اكتب عدد أيام الغياب.",
+      "absenceMin": "عدد أيام الغياب لازم يكون يوم على الأقل.",
+      "absenceMax": "عدد أيام الغياب لا يمكن أن يكون أطول من مدة الخطة.",
+      "atLeastOneField": "لازم تعدل حقل واحد على الأقل.",
+      "invalidId": "خطة غير صالحة.",
+      "hasActiveSubscriptions": "الخطة عليها اشتراكات نشطة ولا يمكن حذفها."
     }
   }
 }

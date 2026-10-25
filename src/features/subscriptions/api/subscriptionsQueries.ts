@@ -2,9 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useDispatch } from 'react-redux';
 import { apiRequest } from '../../../Service/httpClient';
 import { baseApi } from '../../../Service/baseApi';
-
-// The list may come back as a plain array or as a Laravel paginator ({ data: [...] }).
-const toList = (value) => (Array.isArray(value) ? value : value?.data ?? []);
+import { toList } from '../../../utils/apiResponse';
 
 export const subscriptionKeys = {
     all: ['subscriptions'] as const,
@@ -12,10 +10,9 @@ export const subscriptionKeys = {
     detail: (id) => [...subscriptionKeys.all, 'detail', String(id)] as const,
 };
 
-// Lookups the subscription form needs (members are still managed by membersApi elsewhere).
-export const lookupKeys = {
-    members: (search) => ['members', 'lookup', search ?? ''] as const,
-    plans: () => ['plans', 'lookup'] as const,
+// Member lookup for the subscription form (members are still managed by membersApi elsewhere).
+export const memberLookupKeys = {
+    search: (search) => ['members', 'lookup', search ?? ''] as const,
 };
 
 // ---------------------------------------------------------------------
@@ -39,19 +36,10 @@ export const useSubscriptionQuery = (id) => useQuery({
 
 // GET /api/members?search= - Member options for the subscription form (searched on the server)
 export const useMemberLookupQuery = (search, { enabled = true } = {}) => useQuery({
-    queryKey: lookupKeys.members(search),
+    queryKey: memberLookupKeys.search(search),
     queryFn: ({ signal }) => apiRequest('/members', { params: { search }, signal }),
     select: (response) => toList(response?.data?.members),
     placeholderData: keepPreviousData, // keep the last results visible while typing
-    enabled,
-});
-
-// GET /api/plans - Plan options for the subscription form
-export const usePlanLookupQuery = ({ enabled = true } = {}) => useQuery({
-    queryKey: lookupKeys.plans(),
-    queryFn: ({ signal }) => apiRequest('/plans', { signal }),
-    select: (response) => toList(response?.data?.plans),
-    staleTime: 5 * 60 * 1000,
     enabled,
 });
 

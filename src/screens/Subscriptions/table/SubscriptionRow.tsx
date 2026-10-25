@@ -7,7 +7,7 @@ import {
     SUBSCRIPTION_STATUS_STYLES,
     getDaysLeft,
     getSubscriptionStatus,
-} from '../utils/subscriptionStatus';
+} from '../../../features/subscriptions/utils/subscriptionStatus';
 
 const Badge = ({ className, children }) => (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${className}`}>
@@ -65,20 +65,22 @@ const SubscriptionRow = ({ item, locale, onRenew }) => {
                 </Badge>
             </Table.Td>
 
-            {/* Actions */}
-            <Table.Td className="p-3.5 text-center! whitespace-nowrap">
-                <Button
-                    size="xs"
-                    radius="md"
-                    variant="light"
-                    color="lime"
-                    leftSection={<RiRefreshLine size={14} />}
-                    onClick={() => onRenew(item)}
-                    className="font-bold cursor-pointer"
-                >
-                    {t('subscriptions.renew')}
-                </Button>
-            </Table.Td>
+            {/* Actions (only for roles that can manage subscriptions) */}
+            {onRenew && (
+                <Table.Td className="p-3.5 text-center! whitespace-nowrap">
+                    <Button
+                        size="xs"
+                        radius="md"
+                        variant="light"
+                        color="lime"
+                        leftSection={<RiRefreshLine size={14} />}
+                        onClick={() => onRenew(item)}
+                        className="font-bold cursor-pointer"
+                    >
+                        {t('subscriptions.renew')}
+                    </Button>
+                </Table.Td>
+            )}
         </Table.Tr>
     );
 };

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { FiPlus } from 'react-icons/fi';
 
-const SubscriptionsHeader = ({ onCreate }) => {
+const SubscriptionsHeader = ({ actionLabel, onAction }) => {
     const { t } = useTranslation();
 
     return (
@@ -21,15 +21,17 @@ const SubscriptionsHeader = ({ onCreate }) => {
                     </Text>
                 </Stack>
 
-                <Button
-                    onClick={onCreate}
-                    size="sm"
-                    radius="md"
-                    leftSection={<FiPlus size={16} />}
-                    className="w-full! md:w-auto! justify-center font-bold cursor-pointer bg-[#85F40F]! hover:bg-[#79BE0D]! text-slate-950!"
-                >
-                    {t('subscriptions.create')}
-                </Button>
+                {onAction && (
+                    <Button
+                        onClick={onAction}
+                        size="sm"
+                        radius="md"
+                        leftSection={<FiPlus size={16} />}
+                        className="w-full! md:w-auto! justify-center font-bold cursor-pointer bg-[#85F40F]! hover:bg-[#79BE0D]! text-slate-950!"
+                    >
+                        {actionLabel}
+                    </Button>
+                )}
             </Group>
         </Card>
     );

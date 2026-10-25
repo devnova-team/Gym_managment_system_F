@@ -5,12 +5,9 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { RiUserLine, RiVipCrownLine, RiMoneyDollarCircleLine } from 'react-icons/ri';
 import SelectField from '../../../components/Forms/SelectField';
 import { useToast } from '../../../Context/ToastContext';
-import {
-    useCreateSubscriptionMutation,
-    useMemberLookupQuery,
-    usePlanLookupQuery,
-    useRenewSubscriptionMutation,
-} from '../../../features/subscriptions/api/subscriptionsQueries';
+import { useMemberLookupQuery } from '../../../features/subscriptions/api/subscriptionsQueries';
+import { useSubscriptions } from '../../../features/subscriptions/hooks/useSubscriptions';
+import { usePlans } from '../../../features/plans/hooks/usePlans';
 import {
     PAYMENT_STATUSES,
     createSubscriptionSchema,
@@ -53,10 +50,8 @@ export const useSubscriptionForm = ({ opened, mode, subscription, onSuccess }) =
         isFetching: isFetchingMembers,
         isError: isMembersError,
     } = useMemberLookupQuery(debouncedMemberSearch, { enabled: opened && !isRenew });
-    const { data: plans = [], isPending: isLoadingPlans } = usePlanLookupQuery({ enabled: opened });
-
-    const { mutateAsync: createSubscription, isPending: isCreating } = useCreateSubscriptionMutation();
-    const { mutateAsync: renewSubscription, isPending: isRenewing } = useRenewSubscriptionMutation();
+    const { plans, isLoading: isLoadingPlans } = usePlans({ enabled: opened });
+    const { createSubscription, renewSubscription, isCreating, isRenewing } = useSubscriptions();
 
     const memberOptions = useMemo(
         () => members.map((member) => ({
