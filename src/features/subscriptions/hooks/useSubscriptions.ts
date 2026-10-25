@@ -1,8 +1,8 @@
 'use client';
 
 export {
-    useGetSubscriptionsQuery,
-    useGetSubscriptionByIdQuery,
+    useSubscriptionsQuery,
+    useSubscriptionQuery,
     useCreateSubscriptionMutation,
     useRenewSubscriptionMutation,
-} from '../../../Service/Apis/subscriptionsApi';
+} from '../api/subscriptionsQueries';

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
-import { useGetSubscriptionsQuery } from '../../../Service/Apis/subscriptionsApi';
+import { useSubscriptionsQuery } from '../../../features/subscriptions/api/subscriptionsQueries';
 import { getSubscriptionStatus } from '../utils/subscriptionStatus';
 
 const PAGE_SIZE = 10;
@@ -16,7 +16,7 @@ const matchesStatus = (subscription, status) => (
 );
 
 export const useSubscriptionsPage = () => {
-    const { data: subscriptions = [], isLoading, isFetching, isError, refetch } = useGetSubscriptionsQuery(undefined);
+    const { data: subscriptions = [], isPending: isLoading, isFetching, isError, refetch } = useSubscriptionsQuery();
 
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('all');
