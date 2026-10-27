@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // HttpOnly Cookie
-    const expiry = 1 / 3; // 8 hours hard limit
+    const expiry = 1 / 48; // 8 hours hard limit
 
     // ← CHANGED: الـ backend بيرجّع الـ role والـ gym_id مباشرة في data،
     // مفيش user object. فبنبني الـ user object من الـ data.
