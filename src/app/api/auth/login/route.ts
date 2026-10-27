@@ -1,3 +1,5 @@
+// New Version
+
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -11,6 +13,7 @@ export async function POST(request: Request) {
     );
   }
 
+  // 1. أبعت للباك إند
   const backendRes = await fetch(`${baseUrl}/api/auth/login`, {
     method: "POST",
     headers: {
@@ -22,10 +25,13 @@ export async function POST(request: Request) {
 
   const data = await backendRes.json();
 
+  // 2. لو فشل، رجّع الخطأ زي ما هو
   if (!backendRes.ok) {
     return NextResponse.json(data, { status: backendRes.status });
   }
 
+  // 3. استخرج الـ refresh_token من الـ Set-Cookie header
+  // الباك إند بيرجعه كـ HttpOnly cookie، فمش موجود في الـ JSON body
   const setCookieHeader = backendRes.headers.get("set-cookie");
   let refreshToken = null;
 
@@ -37,6 +43,7 @@ export async function POST(request: Request) {
     }
   }
 
+  // 4. جهز الـ response للفرونت (الـ access_token بس)
   const response = NextResponse.json({
     success: data.success,
     message: data.message,
@@ -49,13 +56,14 @@ export async function POST(request: Request) {
     },
   });
 
+  // 5. حط الـ refresh_token في HttpOnly cookie على الـ Next.js domain
   if (refreshToken) {
     response.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 30,
+      maxAge: 60 * 60 * 24 * 7, // 7 أيام
     });
   }
 
