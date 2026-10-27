@@ -469,6 +469,71 @@
       "paymentStatusRequired": "Please select a payment status.",
       "paymentStatusInvalid": "Payment status must be paid or unpaid.",
       "paymentMethodInvalid": "Only cash payment is accepted."
+    },
+    "tabs": {
+      "subscriptions": "Subscriptions",
+      "plans": "Plans"
+    }
+  },
+  "plans": {
+    "create": "New Plan",
+    "createTitle": "New Plan",
+    "editTitle": "Edit Plan",
+    "formSubtitle": "Set the plan type, duration, price, and when a member counts as inactive.",
+    "createSuccess": "Plan created successfully.",
+    "updateSuccess": "Plan updated successfully.",
+    "deleteSuccess": "Plan deleted successfully.",
+    "deleteTitle": "Delete plan?",
+    "deleteDesc": "Are you sure you want to delete \"{{name}}\"? Plans with active subscriptions cannot be deleted.",
+    "emptyTitle": "No plans yet",
+    "emptyDescOwner": "Create your first plan (monthly, yearly, ...) to start selling subscriptions.",
+    "emptyDescStaff": "Ask the gym owner to create plans.",
+    "loadErrorTitle": "Could not load plans",
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
+    "durations": {
+      "monthly": "Monthly",
+      "quarterly": "3 Months",
+      "semiAnnual": "6 Months",
+      "yearly": "Yearly"
+    },
+    "table": {
+      "name": "Plan",
+      "type": "Type",
+      "duration": "Duration",
+      "price": "Price",
+      "absenceThreshold": "Inactive after"
+    },
+    "fields": {
+      "name": "Plan Name",
+      "namePlaceholder": "e.g. Monthly Gold",
+      "type": "Plan Type",
+      "price": "Price",
+      "duration": "Duration (days)",
+      "durationHint": "Or pick a preset below.",
+      "absenceThreshold": "Inactive after (days)",
+      "absenceHint": "Days of absence before the member counts as inactive."
+    },
+    "errors": {
+      "nameRequired": "Please enter the plan name.",
+      "nameShort": "Plan name must be at least 2 characters.",
+      "nameLong": "Plan name must be at most 100 characters.",
+      "typeRequired": "Please select the plan type.",
+      "typeInvalid": "Invalid plan type.",
+      "numberInvalid": "Please enter a valid number.",
+      "wholeNumber": "Please enter a whole number.",
+      "durationRequired": "Please enter the duration.",
+      "durationMin": "Duration must be at least 1 day.",
+      "durationMax": "Duration can be at most 3650 days.",
+      "priceRequired": "Please enter the price.",
+      "pricePositive": "Price must be greater than 0.",
+      "priceMax": "Price is too large.",
+      "absenceRequired": "Please enter the absence threshold.",
+      "absenceMin": "Absence threshold must be at least 1 day.",
+      "absenceMax": "Absence threshold cannot be longer than the plan duration.",
+      "atLeastOneField": "At least one field is required.",
+      "invalidId": "Invalid plan.",
+      "hasActiveSubscriptions": "This plan has active subscriptions and cannot be deleted."
     }
   }
 }

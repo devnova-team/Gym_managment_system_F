@@ -5,8 +5,9 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { RiUserLine, RiVipCrownLine, RiMoneyDollarCircleLine } from 'react-icons/ri';
 import SelectField from '../../../components/Forms/SelectField';
 import { useToast } from '../../../Context/ToastContext';
-import { useGetMembersQuery, useGetPlansQuery } from '../../../Service/Apis/membersApi';
-import { useCreateSubscriptionMutation, useRenewSubscriptionMutation } from '../../../Service/Apis/subscriptionsApi';
+import { useMemberLookupQuery } from '../../../features/subscriptions/api/subscriptionsQueries';
+import { useSubscriptions } from '../../../features/subscriptions/hooks/useSubscriptions';
+import { usePlans } from '../../../features/plans/hooks/usePlans';
 import {
     PAYMENT_STATUSES,
     createSubscriptionSchema,
@@ -22,9 +23,6 @@ const inputClasses = {
     dropdown: 'bg-white! dark:bg-[#0e1517]! border border-slate-200! dark:border-white/10! rounded-xl! shadow-xl',
     option: 'text-xs! font-medium! hover:bg-slate-100! dark:hover:bg-white/10! rounded-lg!',
 };
-
-// The list may come back as a plain array or as a Laravel paginator ({ data: [...] }).
-const toList = (value) => (Array.isArray(value) ? value : value?.data ?? []);
 
 const getDefaultValues = (isRenew, subscription) => (isRenew
     ? {
@@ -47,29 +45,28 @@ export const useSubscriptionForm = ({ opened, mode, subscription, onSuccess }) =
     // Members are searched on the server (the list endpoint is paginated).
     const [memberSearch, setMemberSearch] = useState('');
     const [debouncedMemberSearch] = useDebouncedValue(memberSearch.trim(), 300);
-    const { data: membersResponse, isFetching: isFetchingMembers, isError: isMembersError } = useGetMembersQuery(
-        debouncedMemberSearch ? { search: debouncedMemberSearch } : undefined,
-        { skip: !opened || isRenew },
-    );
-    const { data: plansResponse, isLoading: isLoadingPlans } = useGetPlansQuery(undefined, { skip: !opened });
-
-    const [createSubscription, { isLoading: isCreating }] = useCreateSubscriptionMutation();
-    const [renewSubscription, { isLoading: isRenewing }] = useRenewSubscriptionMutation();
+    const {
+        data: members = [],
+        isFetching: isFetchingMembers,
+        isError: isMembersError,
+    } = useMemberLookupQuery(debouncedMemberSearch, { enabled: opened && !isRenew });
+    const { plans, isLoading: isLoadingPlans } = usePlans({ enabled: opened });
+    const { createSubscription, renewSubscription, isCreating, isRenewing } = useSubscriptions();
 
     const memberOptions = useMemo(
-        () => toList(membersResponse?.data?.members).map((member) => ({
+        () => members.map((member) => ({
             value: String(member.id),
             label: `${member.name} · ${member.phone}`,
         })),
-        [membersResponse],
+        [members],
     );
 
     const planOptions = useMemo(
-        () => toList(plansResponse?.data?.plans).map((plan) => ({
+        () => plans.map((plan) => ({
             value: String(plan.id),
             label: `${plan.name} · ${t(`subscriptions.planTypes.${plan.type}`, { defaultValue: plan.type })} · ${formatCurrency(plan.price, 'EGP', locale)}`,
         })),
-        [plansResponse, t, locale],
+        [plans, t, locale],
     );
 
     const paymentStatusOptions = useMemo(
@@ -94,9 +91,9 @@ export const useSubscriptionForm = ({ opened, mode, subscription, onSuccess }) =
     const onSubmit = useCallback(async (values, { reset }) => {
         try {
             if (isRenew) {
-                await renewSubscription(values).unwrap();
+                await renewSubscription(values);
             } else {
-                await createSubscription(values).unwrap();
+                await createSubscription(values);
             }
             toast.success(t(isRenew ? 'subscriptions.renewSuccess' : 'subscriptions.createSuccess'));
             reset();

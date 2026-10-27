@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MantineProvider } from '@mantine/core';
 import { Provider } from 'react-redux';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { makeStore } from '../../store/store';
+import { makeQueryClient } from '../../Service/queryClient';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { AuthProvider } from '../../AuthContext/AuthProvider';
 import { LanguageProvider } from '../../Context/LanguageContext';
@@ -47,16 +49,19 @@ function ThemedProviders({ children }) {
 
 export default function Providers({ children }) {
     const [store] = useState(makeStore);
+    const [queryClient] = useState(makeQueryClient);
 
     useEffect(() => setupListeners(store.dispatch), [store]);
 
     return (
         <Provider store={store}>
-            <AuthProvider>
-                <ThemeProvider>
-                    <ThemedProviders>{children}</ThemedProviders>
-                </ThemeProvider>
-            </AuthProvider>
+            <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                    <ThemeProvider>
+                        <ThemedProviders>{children}</ThemedProviders>
+                    </ThemeProvider>
+                </AuthProvider>
+            </QueryClientProvider>
         </Provider>
     );
 }

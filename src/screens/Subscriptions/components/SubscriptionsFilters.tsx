@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import SearchInput from '../../../components/SearchInput';
 import SelectField from '../../../components/Forms/SelectField';
-import { SUBSCRIPTION_STATUSES } from '../utils/subscriptionStatus';
+import { SUBSCRIPTION_STATUSES } from '../../../features/subscriptions/utils/subscriptionStatus';
 
 const SubscriptionsFilters = ({ search, onSearchChange, status, onStatusChange }) => {
     const { t } = useTranslation();
