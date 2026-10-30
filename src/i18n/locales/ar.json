@@ -167,6 +167,8 @@
     "phone": "رقم الهاتف",
     "email": "البريد الإلكتروني",
     "plan": "الباقة المشترك بها",
+    "birthDate": "تاريخ الميلاد",
+    "photoUrl": "رابط الصورة",
     "joinDate": "تاريخ الانضمام",
     "startDate": "تاريخ البداية",
     "endDate": "تاريخ الانتهاء",
@@ -174,17 +176,43 @@
     "cashPayment": "دفع نقدي (كاش)",
     "photeUrl": "رابط الصورة",
     "namePlaceholder": "اكتب اسم العضو",
+    "searchPlaceholder": "ابحث باسم العضو أو الهاتف أو البريد الإلكتروني...",
     "emailPlaceholder": "member@example.com",
     "phonePlaceholder": "01xxxxxxxxx",
     "photoUrlPlaceholder": "https://example.com/photo.jpg",
     "planPlaceholder": "اختر باقة",
     "deleteSuccess": "تم حذف العضو بنجاح",
+    "subscriptionStatus": {
+      "label": "حالة الاشتراك",
+      "active": "نشط",
+      "expiringSoon": "ينتهي قريبًا",
+      "expired": "منتهي",
+      "noSubscription": "بدون اشتراك",
+      "unavailable": "غير متاح"
+    },
+    "planFilter": {
+      "label": "خطة الاشتراك",
+      "all": "كل الخطط"
+    },
+    "attendanceFilter": {
+      "label": "الحضور الحالي",
+      "present": "داخل الجيم حاليًا",
+      "absent": "ليس داخل الجيم حاليًا",
+      "attended": "داخل الجيم حاليًا",
+      "notAttended": "ليس داخل الجيم حاليًا",
+      "unavailable": "غير متاح"
+    },
+    "statusSourceError": {
+      "title": "بعض حالات الأعضاء غير متاحة",
+      "message": "تعذر تحميل بيانات الاشتراك أو الحضور."
+    },
     "errors": {
       "nameRequired": "من فضلك اكتب الاسم",
       "nameShort": "الاسم لازم يكون 3 حروف على الأقل",
       "phoneRequired": "من فضلك اكتب رقم التليفون",
       "phoneInvalid": "رقم التليفون غير صحيح",
-      "join_dataRequired": "من فضلك اكتب تاريخ الميلاد",
+      "emailRequired": "من فضلك اكتب البريد الإلكتروني",
+      "birthDateRequired": "من فضلك اكتب تاريخ الميلاد",
       "photoInvalid": "رابط الصورة غير صحيح",
       "invalidEmail": "البريد الإلكتروني غير صحيح",
       "planRequired": "أدخل خطة اشتراكك"

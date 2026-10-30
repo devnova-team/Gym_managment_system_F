@@ -1,19 +1,24 @@
 import 'server-only';
 
 const getBackendUrl = (path, search) => {
-    const baseUrl = process.env.GYM_API_BASE_URL
+    const configuredApiUrl = process.env.GYM_API_BASE_URL
         || process.env.API_BASE_URL
         || process.env.VITE_API_BASE_URL;
+    const baseUrl = configuredApiUrl || process.env.base_url;
 
     if (!baseUrl) {
         return null;
     }
 
-    const url = new URL(`${baseUrl.replace(/\/+$/, '')}/`);
+    const url = new URL(baseUrl);
     if (!['http:', 'https:'].includes(url.protocol)) {
-        throw new Error('GYM_API_BASE_URL must use HTTP or HTTPS');
+        throw new Error('The backend API URL must use HTTP or HTTPS');
+    }
+    if (!configuredApiUrl && !/\/api\/?$/i.test(url.pathname)) {
+        url.pathname = `${url.pathname.replace(/\/+$/, '')}/api`;
     }
 
+    url.pathname = `${url.pathname.replace(/\/+$/, '')}/`;
     const target = new URL(path.replace(/^\/+/, ''), url);
     target.search = search;
     return target;
@@ -34,7 +39,9 @@ export async function proxyBackendRequest(request, path, options: { body?: unkno
     const target = getBackendUrl(path, new URL(request.url).search);
     if (!target) {
         return Response.json(
-            { message: 'Backend API is not configured. Set GYM_API_BASE_URL.' },
+            {
+                message: 'Backend API URL is missing. Set base_url (backend origin) or GYM_API_BASE_URL (API URL) in .env.local, then restart Next.js.',
+            },
             { status: 503 },
         );
     }

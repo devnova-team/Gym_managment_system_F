@@ -10,7 +10,12 @@ export const subscriptionsApi = baseApi.injectEndpoints({
                 url: '/subscriptions',
                 method: 'GET',
             }),
-            transformResponse: (response) => response?.data?.subscriptions ?? [],
+            transformResponse: (response) => {
+                const payload = response?.data ?? response;
+                const subscriptions = payload?.subscriptions ?? payload;
+                if (Array.isArray(subscriptions)) return subscriptions;
+                return Array.isArray(subscriptions?.data) ? subscriptions.data : [];
+            },
             providesTags: ['Subscriptions'],
         }),
         // GET /api/subscriptions/{id} - Get subscription details

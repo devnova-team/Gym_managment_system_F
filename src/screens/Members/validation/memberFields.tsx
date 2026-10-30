@@ -5,9 +5,7 @@ import {
   FiMail,
   FiCalendar,
   FiImage,
-  FiPackage,
 } from "react-icons/fi";
-import SelectField from "../../../components/Forms/SelectField";
 
 // =====================================================================
 // Member Form Fields
@@ -63,7 +61,7 @@ export const getMemberFields = (t) => [
       <TextInputField
         name="email"
         type="email"
-        label={t("members.fields.email", "Email")}
+        label={t("members.email", "Email Address")}
         placeholder={t("members.emailPlaceholder", "member@example.com")}
         value={field.value}
         onChange={field.onChange}
@@ -75,14 +73,14 @@ export const getMemberFields = (t) => [
   },
 
   {
-    id: "join_date",
-    name: "join_date",
+    id: "birth_date",
+    name: "birth_date",
     colSpan: 6,
     component: ({ field, error }) => (
       <TextInputField
-        name="join_date"
+        name="birth_date"
         type="date"
-        label={t("members.joinDate", "Join Date")}
+        label={t("members.birthDate", "Birth Date")}
         value={field.value}
         onChange={field.onChange}
         error={error ? t(error) : undefined}
@@ -93,12 +91,12 @@ export const getMemberFields = (t) => [
   },
 
   {
-    id: "photo_url",
-    name: "photo_url",
+    id: "photo",
+    name: "photo",
     colSpan: 12,
     component: ({ field, error }) => (
       <TextInputField
-        name="photo_url"
+        name="photo"
         label={t("members.photoUrl", "Photo URL")}
         placeholder={t(
           "members.fields.photoUrlPlaceholder",

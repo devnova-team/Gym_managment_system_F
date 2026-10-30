@@ -1,7 +1,91 @@
 import { baseApi } from "../baseApi";
 
+const PAGE_SIZE = 100;
+
+const getMemberPage = (response) => {
+  const payload = response?.data ?? response;
+  const collection = payload?.members ?? payload;
+  const items = Array.isArray(collection)
+    ? collection
+    : Array.isArray(collection?.data)
+      ? collection.data
+      : [];
+  const pagination = response?.pagination
+    ?? response?.meta
+    ?? payload?.pagination
+    ?? payload?.meta
+    ?? collection?.meta
+    ?? collection;
+  const links = response?.links ?? payload?.links ?? collection?.links;
+
+  return { items, pagination, links };
+};
+
 export const membersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getAllMembers: builder.query({
+      async queryFn(_arg, _api, _extraOptions, fetchWithBQ) {
+        const allMembers = [];
+        const seenIds = new Set();
+        let page = 1;
+
+        while (true) {
+          const result = await fetchWithBQ({
+            url: "/members",
+            method: "GET",
+            params: { page, per_page: PAGE_SIZE },
+          });
+
+          if (result.error) return { error: result.error };
+
+          const { items, pagination, links } = getMemberPage(result.data);
+          const newMembers = items.filter((member) => {
+            const id = String(member.id ?? JSON.stringify(member));
+            if (seenIds.has(id)) return false;
+            seenIds.add(id);
+            return true;
+          });
+
+          if (items.length && !newMembers.length) {
+            return {
+              error: {
+                status: "CUSTOM_ERROR",
+                error: "The members API pagination did not return new records.",
+              },
+            };
+          }
+
+          allMembers.push(...newMembers);
+
+          const currentPage = Number(
+            pagination?.current_page ?? pagination?.currentPage ?? pagination?.page ?? page,
+          );
+          const totalPages = Number(
+            pagination?.last_page
+              ?? pagination?.total_pages
+              ?? pagination?.totalPages
+              ?? (pagination?.total != null
+                ? Math.ceil(Number(pagination.total) / Number(pagination.per_page ?? PAGE_SIZE))
+                : NaN),
+          );
+          const hasMore = pagination?.has_more ?? pagination?.hasMore;
+          const nextLink = links?.next;
+          const shouldContinue = Number.isFinite(totalPages)
+            ? currentPage < totalPages
+            : hasMore != null
+              ? Boolean(hasMore)
+              : nextLink != null
+                ? true
+                : items.length === PAGE_SIZE;
+
+          if (!shouldContinue) break;
+          page += 1;
+        }
+
+        return { data: allMembers };
+      },
+      providesTags: ["Members"],
+    }),
     // GET /api/members - Fetch members with search and filter
     getMembers: builder.query({
       query: (params) => ({
@@ -23,7 +107,7 @@ export const membersApi = baseApi.injectEndpoints({
     // GET /api/members/{id} - Get member details
     getMemberById: builder.query({
       query: (id) => ({
-        url: `/members/${id}`,
+        url: `/members/${encodeURIComponent(id)}`,
         method: "GET",
       }),
       providesTags: (_result, _error, id) => [{ type: "Members", id }],
@@ -31,7 +115,7 @@ export const membersApi = baseApi.injectEndpoints({
     // PUT /api/members/{id} - Update member details
     updateMember: builder.mutation({
       query: ({ id, ...patch }) => ({
-        url: `/members/${id}`,
+        url: `/members/${encodeURIComponent(id)}`,
         method: "PUT",
         body: patch,
       }),
@@ -43,7 +127,7 @@ export const membersApi = baseApi.injectEndpoints({
     // DELETE /api/members/{id} - Soft delete member
     deleteMember: builder.mutation({
       query: (id) => ({
-        url: `/members/${id}`,
+        url: `/members/${encodeURIComponent(id)}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Members", "Dashboard"],
@@ -86,6 +170,7 @@ export const membersApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetAllMembersQuery,
   useGetMembersQuery,
   useCreateMemberMutation,
   useGetMemberByIdQuery,

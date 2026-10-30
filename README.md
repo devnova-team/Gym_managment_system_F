@@ -105,6 +105,10 @@ Create a `.env.local` file in the root directory to configure the upstream gym A
 ```env
 GYM_API_BASE_URL=http://localhost:8000/api
 ```
+Alternatively, set `base_url` to the backend origin; the `/api` prefix is appended automatically:
+```env
+base_url=http://localhost:8000
+```
 When unset, API proxy routes return `503` with a configuration message.
 
 ### 3. Run Development Server
@@ -210,6 +214,8 @@ Based on the official GMS API Contract specification:
 - `GET /api/members/{id}`: Member profile details.
 - `PUT /api/members/{id}`: Update member profile.
 - `DELETE /api/members/{id}`: Soft delete member.
+- The members page loads all member pages and filters across the full list by name, phone, email, subscription status/plan, and current attendance from `/api/attendance/today`.
+- Owners and receptionists can register, edit, and delete members; the backend remains responsible for enforcing these permissions.
 - `GET /api/plans`: Fetch available subscription plans.
 - `POST /api/plans`: Create new plan (*Owner only*).
 - `PUT /api/plans/{id}`: Edit plan.

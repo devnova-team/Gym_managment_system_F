@@ -1,7 +1,39 @@
 import { createContext, useState, useEffect, useCallback, useRef } from "react";
 import Cookies from "js-cookie";
 
-export const AuthContext = createContext();
+type AuthUser = {
+  id: string | number | null;
+  name: string | null;
+  email: string | null;
+  role: string | null;
+  gym_id: string | number | null;
+};
+
+type LoginResponse = {
+  data?: {
+    access_token?: string;
+    role?: string;
+    gym_id?: string | number;
+  };
+} | null;
+
+type AuthContextValue = {
+  isAuthenticated: boolean;
+  isReady: boolean;
+  user: AuthUser | null;
+  login: (response: LoginResponse) => boolean;
+  logout: () => Promise<void>;
+  isOwner: boolean;
+};
+
+export const AuthContext = createContext<AuthContextValue>({
+  isAuthenticated: false,
+  isReady: false,
+  user: null,
+  login: () => false,
+  logout: async () => {},
+  isOwner: false,
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -81,7 +113,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isAuthenticated, resetInactivityTimer]);
 
-  const login = (response) => {
+  const login = (response: LoginResponse) => {
     if (!response) {
       return false;
     }

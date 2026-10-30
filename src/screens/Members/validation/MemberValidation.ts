@@ -3,7 +3,7 @@ import * as yup from "yup";
 // =====================================================================
 // Member Validation Schema
 // =====================================================================
-// الحقول المطلوبة: name, phone, email, join_date, photo_url
+// Required backend fields: name, phone, birth_date. Photo is optional.
 //
 // NOTE: حقل planId خاص بالاشتراك (subscription) مش العضو.
 // العلاقة: Member -> Subscription -> Plan
@@ -29,9 +29,9 @@ export const memberValidationSchema = yup.object({
     .required("members.errors.emailRequired")
     .email("members.errors.invalidEmail"),
 
-  join_date: yup.string().trim().required("members.errors.joinDateRequired"),
+  birth_date: yup.string().trim().required("members.errors.birthDateRequired"),
 
-  photo_url: yup
+  photo: yup
     .string()
     .trim()
     .url("members.errors.photoInvalid")

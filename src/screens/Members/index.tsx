@@ -1,142 +1,225 @@
-import { useState, useMemo, useEffect } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Skeleton, Button } from "@mantine/core";
+import { Alert, Button, Skeleton } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { HiOutlinePlus } from "react-icons/hi2";
 
+import {
+  useCreateMemberMutation,
+  useDeleteMemberMutation,
+  useGetAllMembersQuery,
+  useUpdateMemberMutation,
+} from "../../Service/Apis/membersApi";
+import { useGetSubscriptionsQuery } from "../../Service/Apis/subscriptionsApi";
+import { useGetTodayAttendanceQuery } from "../../Service/Apis/attendanceApi";
+import { useToast } from "../../Context/ToastContext";
+import { AuthContext } from "../../AuthContext/AuthProvider";
+import { getApiErrorMessage } from "../../utils/apiErrors";
+import { getSubscriptionStatus } from "../Subscriptions/utils/subscriptionStatus";
 import { memberValidationSchema } from "./validation/MemberValidation";
 import { getMemberFields } from "./validation/memberFields";
-
-// =====================================================================
-// TEMPORARY: Mock data. لما الـ API يشتغل، شيل السطر ده وفعّل اللي تحته.
-// =====================================================================
-import { MOCK_MEMBERS_RESPONSE } from "./mockData";
-// import { useGetMembersQuery } from "../../Service/Apis/membersApi";
-
 import MembersFilter from "./MembersFilter";
 import MembersTable from "./MembersTable";
 import DynamicFormModal from "../../components/DynamicForm/DynamicFormModal";
-import DeleteConfirmModal from "./modals/DeleteConfirmModal"; // ← ADDED
-
-// =====================================================================
-// TEMPORARY: Mutations. لما السيرفر يشتغل، شيل التعليق عن السطرين دول.
-// =====================================================================
-// import {
-//   useCreateMemberMutation,
-//   useUpdateMemberMutation,
-//   useDeleteMemberMutation, // ← ADDED (معلّق)
-// } from "../../Service/Apis/membersApi";
+import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 
 const ITEMS_PER_PAGE = 10;
 
+const normalizeMember = (member) => ({
+  ...member,
+  name: member.name ?? member.full_name ?? "",
+  nameAr: member.nameAr ?? member.name_ar,
+  phone: member.phone ?? member.phone_number ?? "",
+  email: member.email ?? "",
+  birth_date: member.birth_date ?? member.birthDate ?? "",
+  photo: member.photo ?? member.photo_url ?? "",
+  membershipType: member.membershipType ?? member.membership_type,
+  createdAt: member.createdAt ?? member.created_at ?? member.join_date,
+});
+
+const getAttendanceList = (response) => {
+  const payload = response?.data ?? response;
+  const records = payload?.attendance ?? payload?.records ?? payload?.data ?? payload;
+  return Array.isArray(records) ? records : [];
+};
+
+const getAttendanceMemberId = (record) => (
+  record?.member_id
+    ?? record?.memberId
+    ?? record?.member?.id
+    ?? record?.member_details?.id
+);
+
+const isCurrentlyPresent = (record) => {
+  if (record?.check_out || record?.check_out_time || record?.checkOutTime) return false;
+  const status = String(record?.status ?? record?.attendance_status ?? "").toLowerCase();
+  return !["checked_out", "checked-out", "checked out", "left", "out"].includes(status);
+};
+
+const getSubscriptionState = (subscription) => {
+  if (!subscription) return "noSubscription";
+  const endDate = subscription.end_date ?? subscription.endDate;
+  if (endDate && !Number.isNaN(Date.parse(endDate))) {
+    return getSubscriptionStatus(endDate);
+  }
+
+  const status = String(subscription.status ?? "").toLowerCase();
+  if (["active", "expired", "expiringsoon"].includes(status)) {
+    return status === "expiringsoon" ? "expiringSoon" : status;
+  }
+  return "noSubscription";
+};
+
 const Members = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const { user } = useContext(AuthContext);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [membershipTypeFilter, setMembershipTypeFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [attendanceFilter, setAttendanceFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearch] = useDebouncedValue(searchQuery.trim(), 300);
 
-  // =====================================================================
-  // NEW: Members state (بيبدأ من الـ Mock، والـ Add/Edit بيعدّلوا عليه)
-  // لما السيرفر يشتغل، الـ state ده يتشال، والبيانات تيجي من useGetMembersQuery
-  // =====================================================================
-  const [membersList, setMembersList] = useState(MOCK_MEMBERS_RESPONSE.data);
-  // =====================================================================
-
-  // =====================================================================
-  // Modal state
-  // =====================================================================
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
-
-  // ← ADDED: Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingMember, setDeletingMember] = useState(null);
-  // =====================================================================
 
-  // =====================================================================
-  // Mutations (معلّقين)
-  // =====================================================================
-  // const [createMember, { isLoading: isCreating }] = useCreateMemberMutation();
-  // const [updateMember, { isLoading: isUpdating }] = useUpdateMemberMutation();
-  // const [deleteMember, { isLoading: isDeleting }] = useDeleteMemberMutation(); // ← ADDED (معلّق)
-  // =====================================================================
+  const role = String(user?.role ?? "").toLowerCase();
+  const canManageMembers = role === "owner" || role === "receptionist";
+  const canDeleteMembers = canManageMembers;
 
-  // Debounce البحث
-  const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
+  const {
+    data: memberData,
+    isLoading: isMembersLoading,
+    isFetching: isMembersFetching,
+    isError: isMembersError,
+    refetch: refetchMembers,
+  } = useGetAllMembersQuery(undefined);
+  const {
+    data: subscriptions = [],
+    isLoading: isSubscriptionsLoading,
+    isError: isSubscriptionsError,
+    refetch: refetchSubscriptions,
+  } = useGetSubscriptionsQuery(undefined);
+  const {
+    data: attendanceData,
+    isLoading: isAttendanceLoading,
+    isError: isAttendanceError,
+    refetch: refetchAttendance,
+  } = useGetTodayAttendanceQuery(undefined);
 
-  // =====================================================================
-  // MODIFIED: الفلترة والـ pagination بيشتغلوا على membersList (state)
-  // =====================================================================
-  const { data, isLoading, isError } = useMemo(() => {
-    const allMembers = membersList;
+  const [createMember, { isLoading: isCreating }] = useCreateMemberMutation();
+  const [updateMember, { isLoading: isUpdating }] = useUpdateMemberMutation();
+  const [deleteMember, { isLoading: isDeleting }] = useDeleteMemberMutation();
 
-    const filtered = allMembers.filter((member) => {
-      const matchesSearch =
-        !debouncedSearch ||
-        member.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        member.nameAr?.includes(debouncedSearch) ||
-        member.phone.includes(debouncedSearch);
-
-      const matchesStatus =
-        statusFilter === "all" || member.status === statusFilter;
-
-      const matchesType =
-        membershipTypeFilter === "all" ||
-        member.membershipType === membershipTypeFilter;
-
-      return matchesSearch && matchesStatus && matchesType;
-    });
-
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const paginated = filtered.slice(start, start + ITEMS_PER_PAGE);
-
-    return {
-      data: {
-        data: paginated,
-        pagination: {
-          currentPage,
-          totalPages: Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1,
-          limit: ITEMS_PER_PAGE,
-        },
-        count: filtered.length,
-      },
-      isLoading: false,
-      isError: false,
-    };
-  }, [
-    membersList,
-    debouncedSearch,
-    statusFilter,
-    membershipTypeFilter,
-    currentPage,
-  ]);
-  // =====================================================================
-
-  // =====================================================================
-  // PRODUCTION: فعّل ده لما السيرفر يشتغل
-  // =====================================================================
-  // const { data, isLoading, isError } = useGetMembersQuery({
-  //   search: debouncedSearch || undefined,
-  //   status: statusFilter !== "all" ? statusFilter : undefined,
-  //   membershipType: membershipTypeFilter !== "all" ? membershipTypeFilter : undefined,
-  //   page: currentPage,
-  //   limit: ITEMS_PER_PAGE,
-  // });
-  // =====================================================================
-
-  // صفّر الصفحة لما تتغير أي فلتر
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, statusFilter, membershipTypeFilter]);
+  }, [debouncedSearch, statusFilter, planFilter, attendanceFilter]);
 
-  const members = data?.data || [];
-  const pagination = data?.pagination;
+  const allMembers = useMemo(() => (memberData ?? []).map(normalizeMember), [memberData]);
+  const attendanceRecords = useMemo(
+    () => getAttendanceList(attendanceData),
+    [attendanceData],
+  );
+  const subscriptionsByMember = useMemo(() => {
+    const byMember = new Map();
+    subscriptions.forEach((subscription) => {
+      const memberId = subscription.member_id ?? subscription.memberId ?? subscription.member?.id;
+      if (memberId == null) return;
+      const key = String(memberId);
+      byMember.set(key, [...(byMember.get(key) ?? []), subscription]);
+    });
+    return byMember;
+  }, [subscriptions]);
+  const presentMemberIds = useMemo(() => new Set(
+    attendanceRecords
+      .filter(isCurrentlyPresent)
+      .map(getAttendanceMemberId)
+      .filter((id) => id != null)
+      .map(String),
+  ), [attendanceRecords]);
 
-  // =====================================================================
-  // Handlers
-  // =====================================================================
+  const members = useMemo(() => allMembers.map((member) => {
+    const memberId = String(member.id ?? member.member_id);
+    const nestedSubscriptions = member.subscriptions
+      ?? (member.subscription ? [member.subscription] : []);
+    const subscriptionsForMember = subscriptionsByMember.get(memberId) ?? nestedSubscriptions;
+    const memberSubscriptions = Array.isArray(subscriptionsForMember)
+      ? subscriptionsForMember
+      : [subscriptionsForMember];
+    const latestSubscription = [...memberSubscriptions].sort((left, right) => (
+      String(right.end_date ?? "").localeCompare(String(left.end_date ?? ""))
+    ))[0];
+    const planName = latestSubscription?.plan?.name
+      ?? latestSubscription?.plan_name
+      ?? latestSubscription?.membership_type
+      ?? member.membershipType
+      ?? "";
+
+    return {
+      ...member,
+      membershipType: planName,
+      subscriptionStatus: isSubscriptionsError
+        ? "unavailable"
+        : getSubscriptionState(latestSubscription),
+      attendanceStatus: isAttendanceError
+        ? "unavailable"
+        : presentMemberIds.has(memberId)
+          ? "attended"
+          : "notAttended",
+    };
+  }), [
+    allMembers,
+    isAttendanceError,
+    isSubscriptionsError,
+    presentMemberIds,
+    subscriptionsByMember,
+  ]);
+
+  const filteredMembers = useMemo(() => {
+    const search = debouncedSearch.toLowerCase();
+    return members.filter((member) => {
+      const matchesSearch = !search || [
+        member.name,
+        member.phone,
+        member.email,
+      ].some((value) => String(value ?? "").toLowerCase().includes(search));
+      const matchesStatus = statusFilter === "all"
+        || member.subscriptionStatus === statusFilter;
+      const matchesPlan = planFilter === "all"
+        || member.membershipType === planFilter;
+      const matchesAttendance = attendanceFilter === "all"
+        || (attendanceFilter === "attended"
+          ? member.attendanceStatus === "attended"
+          : member.attendanceStatus === "notAttended");
+
+      return matchesSearch && matchesStatus && matchesPlan && matchesAttendance;
+    });
+  }, [attendanceFilter, debouncedSearch, members, planFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / ITEMS_PER_PAGE));
+  const pageMembers = filteredMembers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+  const planOptions = useMemo(() => [...new Set(
+    members.map((member) => member.membershipType).filter(Boolean),
+  )].map((planName) => ({ value: planName, label: planName })), [members]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const defaultValues = useMemo(() => ({
+    name: editingMember?.name || "",
+    phone: editingMember?.phone || "",
+    email: editingMember?.email || "",
+    birth_date: editingMember?.birth_date || "",
+    photo: editingMember?.photo || editingMember?.photo_url || "",
+  }), [editingMember]);
 
   const handleAddClick = () => {
     setEditingMember(null);
@@ -149,139 +232,84 @@ const Members = () => {
   };
 
   const handleCloseModal = () => {
+    if (isCreating || isUpdating) return;
     setIsFormModalOpen(false);
     setEditingMember(null);
   };
 
-  // =====================================================================
-  // MODIFIED: handleFormSubmit بيعدّل الـ membersList state
-  // =====================================================================
-  const handleFormSubmit = (formData) => {
-    if (editingMember) {
-      // ==================== EDIT ====================
-      setMembersList((prev) =>
-        prev.map((m) =>
-          m.id === editingMember.id ? { ...m, ...formData } : m,
-        ),
-      );
-    } else {
-      // ==================== ADD ====================
-      const newMember = {
-        id: `member-${Date.now()}`,
-        name: formData.name,
-        nameAr: formData.nameAr || formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        join_date: formData.join_date,
-        photo_url: formData.photo_url || "",
-        status: "active",
-        membershipType: "Monthly",
-        createdAt: new Date().toISOString(),
-      };
-      setMembersList((prev) => [newMember, ...prev]);
+  const handleFormSubmit = async (formData) => {
+    try {
+      if (editingMember) {
+        await updateMember({ id: editingMember.id, ...formData }).unwrap();
+        toast.success(t("members.updateSuccess", "Member updated successfully"));
+      } else {
+        await createMember(formData).unwrap();
+        toast.success(t("members.createSuccess", "Member created successfully"));
+      }
+
+      setIsFormModalOpen(false);
+      setEditingMember(null);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t));
     }
-    handleCloseModal();
   };
-  // =====================================================================
 
-  // =====================================================================
-  // PRODUCTION handleFormSubmit
-  // =====================================================================
-  // const handleFormSubmit = async (formData) => {
-  //   try {
-  //     if (editingMember) {
-  //       await updateMember({ id: editingMember.id, ...formData }).unwrap();
-  //     } else {
-  //       await createMember(formData).unwrap();
-  //     }
-  //     handleCloseModal();
-  //   } catch (err) {
-  //     console.error("Failed to save member:", err);
-  //   }
-  // };
-  // =====================================================================
-
-  // =====================================================================
-  // ADDED: Delete handlers
-  // =====================================================================
-
-  // فتح مودال تأكيد الحذف
   const handleDeleteClick = (member) => {
     setDeletingMember(member);
     setIsDeleteModalOpen(true);
   };
 
-  // قفل مودال تأكيد الحذف
   const handleCloseDeleteModal = () => {
+    if (isDeleting) return;
     setIsDeleteModalOpen(false);
     setDeletingMember(null);
   };
 
-  // تنفيذ الحذف
-  const handleConfirmDelete = () => {
-    // =====================================================================
-    // TEMPORARY: Mock behavior (يشيل العضو من الـ state)
-    // =====================================================================
-    setMembersList((prev) => prev.filter((m) => m.id !== deletingMember.id));
+  const handleConfirmDelete = async () => {
+    if (!deletingMember) return;
 
-    handleCloseDeleteModal();
-    // =====================================================================
+    try {
+      await deleteMember(deletingMember.id).unwrap();
+      toast.success(t("members.deleteSuccess", "Member deleted successfully"));
+      setIsDeleteModalOpen(false);
+      setDeletingMember(null);
 
-    // =====================================================================
-    // PRODUCTION: فعّل ده لما السيرفر يشتغل وامسح بلوك الـ Mock فوق
-    // =====================================================================
-    // const handleConfirmDelete = async () => {
-    //   try {
-    //     await deleteMember(deletingMember.id).unwrap();
-    //     handleCloseDeleteModal();
-    //   } catch (err) {
-    //     notifications.show({
-    //       title: t("common.error", "Error"),
-    //       message:
-    //         err?.data?.message ||
-    //         t("members.deleteError", "Failed to delete member"),
-    //       color: "red",
-    //     });
-    //   }
-    // };
-    // =====================================================================
+      if (filteredMembers.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t));
+    }
   };
-  // =====================================================================
 
-  // =====================================================================
-  // RENDER: Loading
-  // =====================================================================
-  if (isLoading) {
+  if (isMembersLoading || isSubscriptionsLoading || isAttendanceLoading) {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           {t("members.title", "Members & Subscriptions Management")}
         </h2>
         <div className="p-4 rounded-2xl bg-white dark:bg-[#0e1517] border border-slate-200 dark:border-slate-800/80">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} height={40} mt="sm" radius="md" />
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} height={40} mt="sm" radius="md" />
           ))}
         </div>
       </div>
     );
   }
 
-  // =====================================================================
-  // RENDER: Error
-  // =====================================================================
-  if (isError) {
+  if (isMembersError) {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           {t("members.title", "Members & Subscriptions Management")}
         </h2>
-        <div className="p-8 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-center">
+        <div className="p-8 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-center space-y-4">
           <p className="text-sm text-rose-600 dark:text-rose-400 font-semibold">
-            {t(
-              "members.loadError",
-              "Failed to load members. Please try again.",
-            )}
+            {t("members.loadError", "Failed to load members. Please try again.")}
           </p>
+          <Button variant="light" color="red" onClick={refetchMembers} loading={isMembersFetching}>
+            {t("common.retry", "Try again")}
+          </Button>
         </div>
       </div>
     );
@@ -289,101 +317,99 @@ const Members = () => {
 
   return (
     <div className="space-y-4">
-      {/* Page Title + Count + Add Button */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           {t("members.title", "Members & Subscriptions Management")}
         </h2>
         <div className="flex items-center gap-3">
           <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-            {data?.count || 0} {t("members.count", "members")}
+            {filteredMembers.length} {t("members.count", "members")}
           </p>
-          <Button
-            onClick={handleAddClick}
-            leftSection={<HiOutlinePlus size={18} />}
-            radius="md"
-            className="bg-linear-to-r from-[#85F40F] to-[#6CC80A] hover:from-[#95E913] hover:to-[#79BE0D] text-brand-950 font-bold transition-all shadow-[0_0_15px_rgba(133,244,15,0.35)]"
-          >
-            {t("members.addMember", "Add Member")}
-          </Button>
+          {canManageMembers && (
+            <Button
+              onClick={handleAddClick}
+              leftSection={<HiOutlinePlus size={18} />}
+              radius="md"
+              className="bg-linear-to-r from-[#85F40F] to-[#6CC80A] hover:from-[#95E913] hover:to-[#79BE0D] text-brand-950 font-bold transition-all shadow-[0_0_15px_rgba(133,244,15,0.35)]"
+            >
+              {t("members.addMember", "Add Member")}
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Filters */}
+      {(isSubscriptionsError || isAttendanceError) && (
+        <Alert color="yellow" title={t("members.statusSourceError.title", "Some member statuses are unavailable")}>
+          <div className="flex flex-col gap-2">
+            <span>{t("members.statusSourceError.message", "Subscription or attendance data could not be loaded.")}</span>
+            <Button
+              variant="light"
+              color="yellow"
+              size="xs"
+              className="self-start"
+              onClick={() => {
+                if (isSubscriptionsError) refetchSubscriptions();
+                if (isAttendanceError) refetchAttendance();
+              }}
+            >
+              {t("common.retry", "Try again")}
+            </Button>
+          </div>
+        </Alert>
+      )}
+
       <MembersFilter
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
-        membershipTypeFilter={membershipTypeFilter}
-        setMembershipTypeFilter={setMembershipTypeFilter}
+        planFilter={planFilter}
+        setPlanFilter={setPlanFilter}
+        attendanceFilter={attendanceFilter}
+        setAttendanceFilter={setAttendanceFilter}
+        planOptions={planOptions}
+        subscriptionsUnavailable={isSubscriptionsError}
+        attendanceUnavailable={isAttendanceError}
       />
 
-      {/* Table */}
       <MembersTable
-        members={members}
-        pagination={pagination}
+        members={pageMembers}
+        pagination={{ totalPages }}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         onEditClick={handleEditClick}
-        onDeleteClick={handleDeleteClick} // ← ADDED
+        onDeleteClick={handleDeleteClick}
+        canManageMembers={canManageMembers}
+        canDeleteMembers={canDeleteMembers}
       />
 
-      {/* DynamicFormModal */}
       <DynamicFormModal
         opened={isFormModalOpen}
         onClose={handleCloseModal}
-        title={
-          editingMember
-            ? t("members.editMemberTitle", "Edit Member")
-            : t("members.addMemberTitle", "Add New Member")
-        }
-        subtitle={
-          editingMember
-            ? t("members.editMemberSubtitle", "Update member information")
-            : t(
-                "members.addMemberSubtitle",
-                "Enter the new member's information",
-              )
-        }
+        title={editingMember
+          ? t("members.editMemberTitle", "Edit Member")
+          : t("members.addMemberTitle", "Add New Member")}
+        subtitle={editingMember
+          ? t("members.editMemberSubtitle", "Update member information")
+          : t("members.addMemberSubtitle", "Enter the new member's information")}
         fields={getMemberFields(t)}
         validationSchema={memberValidationSchema}
         onSubmit={handleFormSubmit}
-        // isLoading={isCreating || isUpdating}
-        defaultValues={
-          editingMember
-            ? {
-                name: editingMember.name || "",
-                phone: editingMember.phone || "",
-                email: editingMember.email || "",
-                join_date: editingMember.join_date || "",
-                photo_url: editingMember.photo_url || "",
-              }
-            : {
-                name: "",
-                phone: "",
-                email: "",
-                join_date: "",
-                photo_url: "",
-              }
-        }
-        submitText={
-          editingMember
-            ? t("common.saveChanges", "Save Changes")
-            : t("members.addMember", "Add Member")
-        }
+        isLoading={isCreating || isUpdating}
+        defaultValues={defaultValues}
+        submitText={editingMember
+          ? t("common.saveChanges", "Save Changes")
+          : t("members.addMember", "Add Member")}
         size="lg"
       />
 
-      {/* ← ADDED: DeleteConfirmModal */}
       <DeleteConfirmModal
         opened={isDeleteModalOpen}
         onClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
         memberName={deletingMember?.name || ""}
-        // isLoading={isDeleting}
+        isLoading={isDeleting}
       />
-      {/* ===================================================================== */}
     </div>
   );
 };

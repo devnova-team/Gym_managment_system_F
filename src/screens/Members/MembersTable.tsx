@@ -1,4 +1,3 @@
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Table,
@@ -9,17 +8,18 @@ import {
   Pagination,
 } from "@mantine/core";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
-import { AuthContext } from "../../AuthContext/AuthProvider";
 
 const STATUS_COLORS = {
   active: "green",
+  expiringSoon: "yellow",
   expired: "red",
-  suspended: "yellow",
+  noSubscription: "gray",
 };
 
-const MembershipTypeColors = {
-  Annual: "blue",
-  Monthly: "grape",
+const ATTENDANCE_COLORS = {
+  attended: "green",
+  notAttended: "gray",
+  unavailable: "yellow",
 };
 
 const MembersTable = ({
@@ -28,13 +28,12 @@ const MembersTable = ({
   currentPage,
   setCurrentPage,
   onEditClick,
-  onDeleteClick, // ← CHANGED: prop جديدة للحذف
+  onDeleteClick,
+  canManageMembers,
+  canDeleteMembers,
 }) => {
   const { t, i18n } = useTranslation();
-  const { isOwner } = useContext(AuthContext);
   const isArabic = i18n.language === "ar";
-
-  // ← CHANGED: شيلنا handleDelete، هنستخدم onDeleteClick مباشرة
 
   // Empty state
   if (!members || members.length === 0) {
@@ -69,12 +68,15 @@ const MembersTable = ({
                   {t("members.columns.membershipType", "Membership")}
                 </Table.Th>
                 <Table.Th className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">
-                  {t("members.columns.status", "Status")}
+                  {t("members.subscriptionStatus.label", "Subscription status")}
+                </Table.Th>
+                <Table.Th className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">
+                  {t("members.attendanceFilter.label", "Attendance")}
                 </Table.Th>
                 <Table.Th className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 hidden lg:table-cell">
                   {t("members.columns.createdAt", "Joined")}
                 </Table.Th>
-                {isOwner && (
+                {canManageMembers && (
                   <Table.Th className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 text-end">
                     {t("members.columns.actions", "Actions")}
                   </Table.Th>
@@ -100,27 +102,38 @@ const MembersTable = ({
                   </Table.Td>
                   <Table.Td className="hidden md:table-cell">
                     <Badge
-                      color={
-                        MembershipTypeColors[member.membershipType] || "gray"
-                      }
+                      color="blue"
                       variant="light"
                       radius="md"
                       size="sm"
                     >
-                      {t(
-                        `members.membershipType.${member.membershipType?.toLowerCase()}`,
-                        member.membershipType,
-                      )}
+                      {member.membershipType || "—"}
                     </Badge>
                   </Table.Td>
                   <Table.Td>
                     <Badge
-                      color={STATUS_COLORS[member.status] || "gray"}
+                      color={STATUS_COLORS[member.subscriptionStatus] || "gray"}
                       variant="light"
                       radius="md"
                       size="sm"
                     >
-                      {t(`members.status.${member.status}`, member.status)}
+                      {String(t(
+                        `members.subscriptionStatus.${member.subscriptionStatus}`,
+                        member.subscriptionStatus,
+                      ))}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>
+                    <Badge
+                      color={ATTENDANCE_COLORS[member.attendanceStatus] || "gray"}
+                      variant="light"
+                      radius="md"
+                      size="sm"
+                    >
+                      {String(t(
+                        `members.attendanceFilter.${member.attendanceStatus}`,
+                        member.attendanceStatus,
+                      ))}
                     </Badge>
                   </Table.Td>
                   <Table.Td className="hidden lg:table-cell">
@@ -132,7 +145,7 @@ const MembersTable = ({
                         : "—"}
                     </span>
                   </Table.Td>
-                  {isOwner && (
+                  {canManageMembers && (
                     <Table.Td>
                       <Group gap="xs" justify="flex-end">
                         <Tooltip label={t("common.edit", "Edit")} withArrow>
@@ -144,15 +157,17 @@ const MembersTable = ({
                             <FiEdit2 size={16} />
                           </ActionIcon>
                         </Tooltip>
-                        <Tooltip label={t("common.delete", "Delete")} withArrow>
-                          <ActionIcon
-                            variant="subtle"
-                            color="red"
-                            onClick={() => onDeleteClick(member)} // ← CHANGED: onDeleteClick بدل handleDelete، وبتبعث member كامل
-                          >
-                            <FiTrash2 size={16} />
-                          </ActionIcon>
-                        </Tooltip>
+                        {canDeleteMembers && (
+                          <Tooltip label={t("common.delete", "Delete")} withArrow>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={() => onDeleteClick(member)}
+                            >
+                              <FiTrash2 size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
                       </Group>
                     </Table.Td>
                   )}

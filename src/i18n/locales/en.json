@@ -167,6 +167,8 @@
     "phone": "Phone Number",
     "email": "Email Address",
     "plan": "Subscription Plan",
+    "birthDate": "Birth Date",
+    "photoUrl": "Photo URL",
     "joinDate": "Join Date",
     "startDate": "Start Date",
     "endDate": "End Date",
@@ -174,16 +176,42 @@
     "cashPayment": "Cash Payment (Paid)",
     "photeUrl": "Enter phote url",
     "namePlaceholder": "Write member name",
+    "searchPlaceholder": "Search by member name, phone, or email...",
     "emailPlaceholder": "member@example.com",
     "phonePlaceholder": "01xxxxxxxxx",
     "photoUrlPlaceholder": "https://example.com/photo.jpg",
     "planPlaceholder": "Choose a plan",
     "deleteSuccess": "Member deleted successfully",
+    "subscriptionStatus": {
+      "label": "Subscription status",
+      "active": "Active",
+      "expiringSoon": "Expiring soon",
+      "expired": "Expired",
+      "noSubscription": "No subscription",
+      "unavailable": "Unavailable"
+    },
+    "planFilter": {
+      "label": "Subscription plan",
+      "all": "All plans"
+    },
+    "attendanceFilter": {
+      "label": "Current attendance",
+      "present": "Currently inside",
+      "absent": "Not currently inside",
+      "attended": "Currently inside",
+      "notAttended": "Not currently inside",
+      "unavailable": "Unavailable"
+    },
+    "statusSourceError": {
+      "title": "Some member statuses are unavailable",
+      "message": "Subscription or attendance data could not be loaded."
+    },
     "errors": {
       "nameRequired": "Write your name",
       "nameShort": "Name must be 3 letters at least",
       "phoneRequired": "Write your phone number",
       "phoneInvalid": "Invalid phone number",
+      "emailRequired": "Enter your email address",
       "birthDateRequired": "enter your birth-date",
       "photoInvalid": "Invalid Phote URL",
       "invalidEmail": "Enter your email",
