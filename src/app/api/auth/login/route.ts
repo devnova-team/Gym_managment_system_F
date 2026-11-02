@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   }
 
   // 1. أبعت للباك إند
-  const backendRes = await fetch(`${baseUrl}/api/auth/login`, {
+  const backendRes = await fetch(`${baseUrl}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

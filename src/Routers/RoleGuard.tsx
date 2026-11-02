@@ -17,4 +17,4 @@ const RoleGuard = ({ allowedRoles = ["owner"], children }) => {
   return isReady && isAllowed ? children : null;
 };
 
-export default RoleGuard;
+export default RoleGuard;curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{}'

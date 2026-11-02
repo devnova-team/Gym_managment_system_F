@@ -26,7 +26,7 @@ export async function POST() {
   // 2. أبعت للباك إند
   // ملاحظة: الباك إند بتاعك بيقرا الـ refresh_token من الـ Cookie،
   // فبنبعته في الـ Cookie header
-  const backendRes = await fetch(`${baseUrl}/api/auth/refresh`, {
+  const backendRes = await fetch(`${baseUrl}/auth/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

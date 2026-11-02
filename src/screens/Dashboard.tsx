@@ -20,6 +20,7 @@ import Logo from "../components/Logo";
 import NavBar from "../Header/NavBar";
 import DashboardFooter from "../components/DashboardFooter";
 import { AuthContext } from "../AuthContext/AuthProvider";
+import { hasRole } from "../server/auth/permissions";
 
 const TAB_VALUES_TEMPLATE = [
   {
@@ -27,30 +28,35 @@ const TAB_VALUES_TEMPLATE = [
     value: "overview",
     icon: <FiActivity size={20} />,
     labelKey: "nav.dashboard",
+    roles: ["owner", "receptionist"],
   },
   {
     id: 2,
     value: "members",
     icon: <RiUserStarLine size={20} />,
     labelKey: "nav.members",
+    roles: ["owner", "receptionist"],
   },
   {
     id: 3,
     value: "attendance",
     icon: <FiUsers size={20} />,
     labelKey: "nav.attendance",
+    roles: ["owner", "receptionist"],
   },
   {
     id: 4,
     value: "communication",
     icon: <RiMegaphoneLine size={20} />,
     labelKey: "nav.communication",
+    roles: ["owner", "receptionist"],
   },
   {
     id: 5,
     value: "staff",
     icon: <RiShieldUserLine size={20} />,
     labelKey: "nav.staff",
+    roles: ["owner"],
   },
   {
     id: 6,
@@ -58,6 +64,7 @@ const TAB_VALUES_TEMPLATE = [
     icon: <RiWallet3Line size={20} />,
     labelKey: "nav.expenses",
     ownerOnly: true,
+    roles: ["owner"],
   },
   {
     id: 7,
@@ -65,6 +72,7 @@ const TAB_VALUES_TEMPLATE = [
     icon: <FiCalendar size={20} />,
     labelKey: "nav.reports",
     ownerOnly: true,
+    roles: ["owner"],
   },
   {
     id: 8,
@@ -72,6 +80,7 @@ const TAB_VALUES_TEMPLATE = [
     icon: <RiStore2Line size={20} />,
     labelKey: "nav.store",
     ownerOnly: true,
+    roles: ["owner"],
   },
   {
     id: 9,
@@ -79,6 +88,7 @@ const TAB_VALUES_TEMPLATE = [
     icon: <MdOutlineFitnessCenter size={20} />,
     labelKey: "nav.equipment",
     ownerOnly: true,
+    roles: ["owner"],
   },
   {
     id: 10,
@@ -86,6 +96,7 @@ const TAB_VALUES_TEMPLATE = [
     icon: <RiNotification3Line size={20} />,
     labelKey: "nav.reminders",
     ownerOnly: true,
+    roles: ["owner"],
   },
 ];
 
@@ -94,17 +105,17 @@ const Dashboard = ({ children }) => {
   const isRTL = i18n.dir() === "rtl";
   const pathname = usePathname();
   const router = useRouter();
-  const { isOwner } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   // Filter tabs by role and memoize translated labels
   const tabValues = useMemo(() => {
-    return TAB_VALUES_TEMPLATE.filter((tab) => !tab.ownerOnly || isOwner).map(
+    return TAB_VALUES_TEMPLATE.filter((tab) => hasRole(user, tab.roles)).map(
       (tab) => ({
         ...tab,
         label: t(tab.labelKey, tab.value),
       }),
     );
-  }, [t, isOwner]);
+  }, [t, user]);
 
   const currentTab = useMemo(
     () => pathname.split("/").pop() || "overview",
@@ -225,9 +236,7 @@ const Dashboard = ({ children }) => {
             data-panel="true"
             className="flex-1 w-full overflow-y-auto max-lg:no-scrollbar bg-slate-50 dark:bg-[#0c101d] p-4 md:p-6 lg:p-8 transition-colors flex flex-col justify-between"
           >
-            <div className="flex-1 w-full">
-              {children}
-            </div>
+            <div className="flex-1 w-full">{children}</div>
             <DashboardFooter />
           </main>
         </div>

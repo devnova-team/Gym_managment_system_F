@@ -11,7 +11,7 @@ export async function POST() {
   // 1. بلّغ الباك إند (لو عايز)
   if (baseUrl && refreshToken) {
     try {
-      await fetch(`${baseUrl}/api/auth/logout`, {
+      await fetch(`${baseUrl}/auth/logout`, {
         method: "POST",
         headers: {
           Cookie: `refresh_token=${refreshToken}`,
