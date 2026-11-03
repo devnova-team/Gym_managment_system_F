@@ -60,7 +60,17 @@ const getForwardedRequestHeaders = (request: Request, hasParsedBody: boolean) =>
     return headers;
 };
 
-const getForwardedResponseHeaders = (response: Response) => {
+// The backend's cookie is re-issued by this app, so a Domain bound to the backend host would make
+// the browser reject it, and Secure would break plain-http local development.
+const toAppCookie = (cookie: string, isSecureRequest: boolean) => cookie
+    .split(';')
+    .filter((part) => {
+        const name = part.trim().split('=')[0].toLowerCase();
+        return name !== 'domain' && (isSecureRequest || name !== 'secure');
+    })
+    .join(';');
+
+const getForwardedResponseHeaders = (response: Response, isSecureRequest: boolean) => {
     const headers = new Headers();
 
     for (const name of RESPONSE_HEADER_NAMES) {
@@ -68,7 +78,7 @@ const getForwardedResponseHeaders = (response: Response) => {
         if (value) headers.set(name, value);
     }
     for (const cookie of response.headers.getSetCookie()) {
-        headers.append('set-cookie', cookie);
+        headers.append('set-cookie', toAppCookie(cookie, isSecureRequest));
     }
 
     return headers;
@@ -115,6 +125,6 @@ export async function proxyBackendRequest(
     return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
-        headers: getForwardedResponseHeaders(response),
+        headers: getForwardedResponseHeaders(response, requestUrl.protocol === 'https:'),
     });
 }
