@@ -19,6 +19,16 @@ const getBackendUrl = (path, search) => {
     return target;
 };
 
+// The backend's cookie is re-issued by this app, so a Domain bound to the backend host would make
+// the browser reject it, and Secure would break plain-http local development.
+const toAppCookie = (cookie: string, isSecureRequest: boolean) => cookie
+    .split(';')
+    .filter((part) => {
+        const name = part.trim().split('=')[0].toLowerCase();
+        return name !== 'domain' && (isSecureRequest || name !== 'secure');
+    })
+    .join(';');
+
 const getRequestBody = async (request, body) => {
     if (body !== undefined) return JSON.stringify(body);
     if (['GET', 'HEAD'].includes(request.method)) return undefined;
@@ -66,8 +76,9 @@ export async function proxyBackendRequest(request, path, options: { body?: unkno
         const value = response.headers.get(name);
         if (value) responseHeaders.set(name, value);
     }
+    const isSecureRequest = new URL(request.url).protocol === 'https:';
     for (const cookie of response.headers.getSetCookie()) {
-        responseHeaders.append('set-cookie', cookie);
+        responseHeaders.append('set-cookie', toAppCookie(cookie, isSecureRequest));
     }
 
     return new Response(response.body, {

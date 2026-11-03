@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useCallback, useRef } from "react";
 import Cookies from "js-cookie";
+import { SESSION_EXPIRY_DAYS } from "../Service/httpClient";
 
 export const AuthContext = createContext();
 
@@ -30,12 +31,18 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
+      // The backend requires the Bearer token to blacklist it and clear the refresh cookie.
+      const token = Cookies.get("token");
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
     } catch (err) {
-      console.error("Logout request falied", err);
+      console.error("Logout request failed", err);
     } finally {
       Cookies.remove("isAuthenticated");
       Cookies.remove("user");
@@ -86,8 +93,7 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
 
-    // HttpOnly Cookie
-    const expiry = 1 / 3; // 8 hours hard limit
+    const expiry = SESSION_EXPIRY_DAYS; // 8 hours hard limit
 
     // ← CHANGED: الـ backend بيرجّع الـ role والـ gym_id مباشرة في data،
     // مفيش user object. فبنبني الـ user object من الـ data.

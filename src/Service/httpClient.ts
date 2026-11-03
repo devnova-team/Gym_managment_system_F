@@ -11,6 +11,7 @@ type RequestOptions = {
     body?: unknown;
     params?: Record<string, unknown>;
     signal?: AbortSignal;
+    skipAuth?: boolean;
 };
 
 export class ApiError extends Error {
@@ -25,10 +26,13 @@ export class ApiError extends Error {
     }
 }
 
+// Matches the AuthProvider session length; the JWT itself lives 30 minutes and is renewed by refresh.
+export const SESSION_EXPIRY_DAYS = 1 / 3;
+
 const getAccessToken = () => Cookies.get('token')
     || (typeof window !== 'undefined' ? window.localStorage.getItem('token') : null);
 
-const clearSessionAndRedirect = () => {
+export const clearSessionAndRedirect = () => {
     Cookies.remove('isAuthenticated');
     Cookies.remove('user');
     Cookies.remove('token');
@@ -46,13 +50,13 @@ const buildUrl = (path: string, params: RequestOptions['params']) => {
     return `${API_BASE_URL}${path}${query ? `?${query}` : ''}`;
 };
 
-const send = (path: string, { method = 'GET', body, params, signal }: RequestOptions) => {
+const send = (path: string, { method = 'GET', body, params, signal, skipAuth = false }: RequestOptions) => {
     const headers = new Headers({
         Accept: 'application/json',
         'Accept-Language': i18n.language || 'en',
     });
     const token = getAccessToken();
-    if (token) headers.set('Authorization', `Bearer ${token}`);
+    if (token && !skipAuth) headers.set('Authorization', `Bearer ${token}`);
     if (body !== undefined) headers.set('Content-Type', 'application/json');
 
     const init: RequestInit = { method, headers, credentials: 'include', signal }; // credentials: HttpOnly refresh cookie
@@ -61,14 +65,16 @@ const send = (path: string, { method = 'GET', body, params, signal }: RequestOpt
     return fetch(buildUrl(path, params), init);
 };
 
-// Concurrent 401s share one refresh call: the refresh token rotates, so a second call would fail.
+// Concurrent 401s (from both RTK Query and TanStack Query) share one refresh call:
+// the refresh token rotates, so a second call would fail.
 let refreshPromise = null;
 
-const refreshAccessToken = () => {
-    refreshPromise ??= send('/auth/refresh', { method: 'POST' })
+export const refreshAccessToken = () => {
+    // The refresh endpoint authenticates with the HttpOnly cookie only; an expired Bearer token must not be sent.
+    refreshPromise ??= send('/auth/refresh', { method: 'POST', skipAuth: true })
         .then(async (response) => {
             const token = response.ok ? (await response.json())?.data?.access_token : null;
-            if (token) Cookies.set('token', token);
+            if (token) Cookies.set('token', token, { expires: SESSION_EXPIRY_DAYS });
             return Boolean(token);
         })
         .catch(() => false)
