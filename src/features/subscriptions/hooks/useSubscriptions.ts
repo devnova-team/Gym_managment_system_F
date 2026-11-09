@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { usePermissions } from '../../../hooks/usePermissions';
+import { usePermissions } from '@/features/auth/hooks/usePermissions';
 import {
     useCreateSubscriptionMutation,
     useRenewSubscriptionMutation,
     useSubscriptionsQuery,
-} from '../api/subscriptionsQueries';
-import { getDaysLeft, getSubscriptionStatus } from '../utils/subscriptionStatus';
+} from '@/features/subscriptions/api/subscriptionsQueries';
+import { getDaysLeft, getSubscriptionStatus } from '@/features/subscriptions/utils/subscriptionStatus';
 
 /**
  * Everything a screen needs to read and manage subscriptions.

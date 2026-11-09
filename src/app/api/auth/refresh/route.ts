@@ -2,10 +2,11 @@
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getBackendUrl } from '@/server/backend/api-client';
 
 export async function POST() {
-  const baseUrl = process.env.GYM_API_BASE_URL;
-  if (!baseUrl) {
+  const backendUrl = getBackendUrl('/auth/refresh');
+  if (!backendUrl) {
     return NextResponse.json(
       { message: 'Backend API is not configured.' },
       { status: 503 }
@@ -26,7 +27,7 @@ export async function POST() {
   // 2. أبعت للباك إند
   // ملاحظة: الباك إند بتاعك بيقرا الـ refresh_token من الـ Cookie،
   // فبنبعته في الـ Cookie header
-  const backendRes = await fetch(`${baseUrl}/api/auth/refresh`, {
+  const backendRes = await fetch(backendUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -10,5 +10,5 @@ export {
     useCreatePlanMutation,
     useUpdatePlanMutation,
     useDeletePlanMutation,
-} from '../../../Service/Apis/membersApi';
+} from '@/features/members/api/rtkEndpoints';
 

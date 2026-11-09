@@ -4,4 +4,4 @@ export {
     useCheckInMutation,
     useGetTodayAttendanceQuery,
     useSyncOfflineAttendanceMutation,
-} from '../../../Service/Apis/attendanceApi';
+} from '@/features/attendance/api/rtkEndpoints';

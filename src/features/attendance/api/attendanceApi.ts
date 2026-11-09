@@ -1,1 +1,1 @@
-export * from '../../../Service/Apis/attendanceApi';
+export * from '@/features/attendance/api/rtkEndpoints';

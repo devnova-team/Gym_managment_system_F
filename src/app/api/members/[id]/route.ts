@@ -1,4 +1,4 @@
-import { proxyBackendRequest } from '../../../../server/backend/api-client';
+import { proxyBackendRequest } from '@/server/backend/api-client';
 
 const handle = async (request, { params }) => {
     const { id } = await params;

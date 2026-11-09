@@ -1,1 +1,1 @@
-export * from '../../../Service/Apis/authApi';
+export * from '@/features/auth/api/rtkEndpoints';

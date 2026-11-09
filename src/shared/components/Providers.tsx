@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { MantineProvider } from '@mantine/core';
 import { Provider } from 'react-redux';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { makeStore } from '../../store/store';
-import { makeQueryClient } from '../../Service/queryClient';
+import { makeStore } from '@/shared/state/store';
+import { makeQueryClient } from '@/shared/api/queryClient';
 import { setupListeners } from '@reduxjs/toolkit/query';
-import { AuthProvider } from '../../AuthContext/AuthProvider';
-import { LanguageProvider } from '../../Context/LanguageContext';
-import { ThemeProvider, useTheme } from '../../Context/ThemeContext';
-import { ToastProvider } from '../../Context/ToastContext';
+import { AuthProvider } from '@/features/auth/context/AuthProvider';
+import { LanguageProvider } from '@/shared/providers/LanguageContext';
+import { ThemeProvider, useTheme } from '@/shared/providers/ThemeContext';
+import { ToastProvider } from '@/shared/providers/ToastContext';
 
 const theme = {
     fontFamily: 'Inter, sans-serif',

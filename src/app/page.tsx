@@ -1,4 +1,4 @@
-import HomeRedirect from '../shared/components/HomeRedirect';
+import HomeRedirect from '@/shared/components/HomeRedirect';
 
 export default function HomePage() {
     return <HomeRedirect />;

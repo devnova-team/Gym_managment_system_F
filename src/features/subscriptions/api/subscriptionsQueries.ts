@@ -1,8 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
-import { apiRequest } from '../../../Service/httpClient';
-import { baseApi } from '../../../Service/baseApi';
-import { toList } from '../../../utils/apiResponse';
+import { apiRequest } from '@/shared/api/httpClient';
+import { baseApi } from '@/shared/api/baseApi';
+import { toList } from '@/shared/utils/apiResponse';
 
 export const subscriptionKeys = {
     all: ['subscriptions'] as const,

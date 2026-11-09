@@ -1,6 +1,6 @@
 import 'server-only';
-import { getSession } from './session';
-import { hasRole } from './permissions';
+import { getSession } from '@/server/auth/session';
+import { hasRole } from '@/server/auth/permissions';
 
 export const forbiddenResponse = () => Response.json(
     { success: false, message: 'You do not have permission to perform this action.' },

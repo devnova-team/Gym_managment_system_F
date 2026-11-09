@@ -1,7 +1,7 @@
-import { proxyBackendRequest } from '../../../../server/backend/api-client';
-import { requireRole } from '../../../../server/auth/requireRole';
-import { notFoundResponse, validateJsonBody } from '../../../../server/validation/validateRequest';
-import { planIdSchema, updatePlanSchema } from '../../../../features/plans/validation/planValidation';
+import { proxyBackendRequest } from '@/server/backend/api-client';
+import { requireRole } from '@/server/auth/requireRole';
+import { notFoundResponse, validateJsonBody } from '@/server/validation/validateRequest';
+import { planIdSchema, updatePlanSchema } from '@/features/plans/validation/planValidation';
 
 const planPath = (id) => `/plans/${encodeURIComponent(id)}`;
 

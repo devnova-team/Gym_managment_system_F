@@ -1,6 +1,6 @@
-import { proxyBackendRequest } from '../../../../server/backend/api-client';
-import { validateJsonBody } from '../../../../server/validation/validateRequest';
-import { renewSubscriptionSchema } from '../../../../features/subscriptions/validation/subscriptionValidation';
+import { proxyBackendRequest } from '@/server/backend/api-client';
+import { validateJsonBody } from '@/server/validation/validateRequest';
+import { renewSubscriptionSchema } from '@/features/subscriptions/validation/subscriptionValidation';
 
 // POST /api/subscriptions/renew - Renew an existing subscription
 export async function POST(request) {

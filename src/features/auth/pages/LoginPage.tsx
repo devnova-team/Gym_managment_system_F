@@ -1,0 +1,3 @@
+'use client';
+
+export { default } from '@/features/auth/screens/Login/Login';

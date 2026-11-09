@@ -1,1 +1,1 @@
-export * from '../../../Service/Apis/membersApi';
+export * from '@/features/members/api/rtkEndpoints';

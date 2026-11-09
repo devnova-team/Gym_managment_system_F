@@ -1,10 +1,10 @@
-import { PublicAuthGate } from '../../../shared/components/AuthGate';
-import LoginForm from '../../../features/auth/components/LoginForm';
+import { PublicAuthGate } from '@/shared/components/AuthGate';
+import FeatureLoginPage from '@/features/auth/pages/LoginPage';
 
 export default function LoginPage() {
     return (
         <PublicAuthGate>
-            <LoginForm />
+            <FeatureLoginPage />
         </PublicAuthGate>
     );
 }

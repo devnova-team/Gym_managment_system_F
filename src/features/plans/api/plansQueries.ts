@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDispatch } from 'react-redux';
-import { apiRequest } from '../../../Service/httpClient';
-import { baseApi } from '../../../Service/baseApi';
-import { toList } from '../../../utils/apiResponse';
+import { apiRequest } from '@/shared/api/httpClient';
+import { baseApi } from '@/shared/api/baseApi';
+import type { Plan, PlanInput } from '@/features/plans/types';
+
+type PlansResponse = {
+    data?: {
+        plans?: Plan[] | { data?: Plan[] };
+    };
+};
 
 export const planKeys = {
     all: ['plans'] as const,
@@ -13,7 +19,10 @@ export const planKeys = {
 export const usePlansQuery = ({ enabled = true } = {}) => useQuery({
     queryKey: planKeys.list(),
     queryFn: ({ signal }) => apiRequest('/plans', { signal }),
-    select: (response) => toList(response?.data?.plans),
+    select: (response: PlansResponse): Plan[] => {
+        const plans = response?.data?.plans;
+        return Array.isArray(plans) ? plans : plans?.data ?? [];
+    },
     staleTime: 5 * 60 * 1000, // plans rarely change
     enabled,
 });
@@ -36,7 +45,7 @@ export const useCreatePlanMutation = () => {
     const invalidate = useInvalidatePlans();
 
     return useMutation({
-        mutationFn: (planData: Record<string, unknown>) => apiRequest('/plans', { method: 'POST', body: planData }),
+        mutationFn: (planData: PlanInput) => apiRequest('/plans', { method: 'POST', body: planData }),
         onSuccess: invalidate,
     });
 };
@@ -46,7 +55,7 @@ export const useUpdatePlanMutation = () => {
     const invalidate = useInvalidatePlans();
 
     return useMutation({
-        mutationFn: ({ id, ...planData }: { id: number | string; [field: string]: unknown }) => (
+        mutationFn: ({ id, ...planData }: { id: number | string } & Partial<PlanInput>) => (
             apiRequest(`/plans/${encodeURIComponent(id)}`, { method: 'PUT', body: planData })
         ),
         onSuccess: invalidate,

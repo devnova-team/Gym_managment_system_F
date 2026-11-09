@@ -1,12 +1,13 @@
 // New Version
 
 import { NextResponse } from "next/server";
+import { getBackendUrl } from "@/server/backend/api-client";
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const baseUrl = process.env.GYM_API_BASE_URL;
-  if (!baseUrl) {
+  const backendUrl = getBackendUrl('/auth/login');
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Backend API is not configured." },
       { status: 503 },
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   // 1. أبعت للباك إند
-  const backendRes = await fetch(`${baseUrl}/api/auth/login`, {
+  const backendRes = await fetch(backendUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -1,12 +1,12 @@
 'use client';
 
-import { usePermissions } from '../../../hooks/usePermissions';
+import { usePermissions } from '@/features/auth/hooks/usePermissions';
 import {
     useCreatePlanMutation,
     useDeletePlanMutation,
     usePlansQuery,
     useUpdatePlanMutation,
-} from '../api/plansQueries';
+} from '@/features/plans/api/plansQueries';
 
 /**
  * Everything a screen needs to read and manage plans.

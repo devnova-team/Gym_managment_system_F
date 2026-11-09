@@ -2,16 +2,17 @@
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getBackendUrl } from "@/server/backend/api-client";
 
 export async function POST() {
-  const baseUrl = process.env.GYM_API_BASE_URL;
+  const backendUrl = getBackendUrl('/auth/logout');
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get("refresh_token")?.value;
 
   // 1. بلّغ الباك إند (لو عايز)
-  if (baseUrl && refreshToken) {
+  if (backendUrl && refreshToken) {
     try {
-      await fetch(`${baseUrl}/api/auth/logout`, {
+      await fetch(backendUrl, {
         method: "POST",
         headers: {
           Cookie: `refresh_token=${refreshToken}`,

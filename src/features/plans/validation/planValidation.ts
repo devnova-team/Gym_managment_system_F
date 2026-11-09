@@ -8,7 +8,7 @@ import * as yup from 'yup';
 // The backend stays the final authority.
 // =====================================================================
 
-export const PLAN_TYPES = ['daily', '2x_week', '3x_week'];
+export const PLAN_TYPES = ['limited', 'unlimited'];
 
 // Quick picks for the duration field (monthly, quarterly, ... yearly).
 export const DURATION_PRESETS = [
@@ -22,7 +22,7 @@ const MAX_DURATION_DAYS = 3650; // 10 years
 
 // Empty inputs ('' / null) count as missing, not as invalid numbers.
 const toUndefinedIfEmpty = (value, originalValue) => (
-    originalValue === '' || originalValue === null ? undefined : value
+    originalValue === '' ? undefined : value
 );
 
 const number = () => yup.number().transform(toUndefinedIfEmpty).typeError('plans.errors.numberInvalid');
@@ -43,6 +43,10 @@ const fields = {
     price: number()
         .positive('plans.errors.pricePositive')
         .max(1_000_000, 'plans.errors.priceMax'),
+    total_sessions: number()
+        .integer('plans.errors.wholeNumber')
+        .min(1, 'plans.errors.totalSessionsMin')
+        .nullable(),
     absence_threshold_days: number()
         .integer('plans.errors.wholeNumber')
         .min(1, 'plans.errors.absenceMin'),
@@ -64,6 +68,15 @@ export const createPlanSchema = yup.object({
     type: fields.type.required('plans.errors.typeRequired'),
     duration_days: fields.duration_days.required('plans.errors.durationRequired'),
     price: fields.price.required('plans.errors.priceRequired'),
+    total_sessions: fields.total_sessions.when('type', ([type], schema) => (
+        type === 'limited'
+            ? schema.required('plans.errors.totalSessionsRequired')
+            : schema.test(
+            'no-session-limit',
+            'plans.errors.unlimitedSessions',
+            (value) => value === undefined || value === null,
+            )
+    )),
     absence_threshold_days: absenceWithinDuration(fields.absence_threshold_days.required('plans.errors.absenceRequired')),
 });
 
@@ -73,6 +86,13 @@ export const updatePlanSchema = yup.object({
     type: fields.type,
     duration_days: fields.duration_days,
     price: fields.price,
+    total_sessions: fields.total_sessions.test(
+        'no-session-limit-for-unlimited',
+        'plans.errors.unlimitedSessions',
+        function validateSessions(value) {
+            return this.parent.type !== 'unlimited' || value === undefined || value === null;
+        },
+    ),
     absence_threshold_days: absenceWithinDuration(fields.absence_threshold_days),
 }).test(
     'at-least-one-field',

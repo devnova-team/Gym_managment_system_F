@@ -1,7 +1,7 @@
-import { proxyBackendRequest } from '../../../server/backend/api-client';
-import { requireRole } from '../../../server/auth/requireRole';
-import { validateJsonBody } from '../../../server/validation/validateRequest';
-import { createPlanSchema } from '../../../features/plans/validation/planValidation';
+import { proxyBackendRequest } from '@/server/backend/api-client';
+import { requireRole } from '@/server/auth/requireRole';
+import { validateJsonBody } from '@/server/validation/validateRequest';
+import { createPlanSchema } from '@/features/plans/validation/planValidation';
 
 // GET /api/plans - List the gym's plans (any authenticated role)
 export const GET = (request) => proxyBackendRequest(request, '/plans');

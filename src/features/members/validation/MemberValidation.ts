@@ -1,1 +1,1 @@
-export { default } from '../../../screens/Members/validation/MemberValidation';
+export { default } from '@/features/members/screens/Members/validation/MemberValidation';

@@ -64,26 +64,45 @@ Small and medium gym facilities typically suffer from:
 
 ## 3. Project Architecture & Folder Structure
 
-The app uses App Router pages/layouts with feature modules and server-only API proxy code:
+The source is organized by feature. `app/` owns Next.js routes, each feature owns its UI and data access, `server/` contains server-only code, and `shared/` contains reusable application infrastructure.
 
 ```
 src/
-├── app/                              # Next.js App Router pages and route handlers
-│   ├── (auth)/login/
-│   ├── (dashboard)/{members,attendance,overview}/
-│   ├── dashboard/                    # Backward-compatible /dashboard/* routes
-│   └── api/{auth,members}/            # Server-side API proxy handlers
-├── features/{auth,members,attendance}/
-│   ├── components/
-│   ├── api/
-│   ├── hooks/
-│   ├── services/
-│   └── validation/
-├── screens/                           # Existing dashboard screen implementations
-├── server/{auth,backend}/             # Server-only session, permissions, API client
-├── shared/{components,hooks}/         # Providers, auth gates, and shared hooks
-└── store/store.js                    # Redux store factory
+├── app/                              # Next.js App Router pages and API route handlers
+│   ├── (auth)/                       # Public auth routes
+│   ├── (dashboard)/                  # Dashboard route-group entry points
+│   ├── api/                          # Server-side BFF/proxy endpoints
+│   └── dashboard/                    # /dashboard/* routes
+├── features/
+│   ├── attendance/
+│   ├── auth/
+│   ├── communication/
+│   ├── dashboard/
+│   ├── equipment/
+│   ├── expenses/
+│   ├── members/
+│   ├── plans/
+│   ├── reminders/
+│   ├── reports/
+│   ├── staff/
+│   ├── store/
+│   └── subscriptions/                # Feature-owned api, data, hooks, pages,
+│       └── ...                       # screens, services, types, and validation
+├── server/                           # Server-only auth, backend, and validation
+└── shared/
+    ├── api/                          # Shared HTTP clients and API base
+    ├── auth/                         # Shared authorization helpers
+    ├── components/ui/                # Reusable UI primitives
+    ├── hooks/
+    ├── i18n/
+    ├── layout/
+    ├── navigation/
+    ├── providers/
+    ├── state/
+    └── utils/
 ```
+
+Use the `@/` import alias for source-to-source imports. Keep feature-specific code inside its feature; put code in `shared/` only when it is genuinely reused across features. Next.js route files should stay thin and delegate to feature pages or server handlers.
 
 ---
 
@@ -211,8 +230,8 @@ Based on the official GMS API Contract specification:
 - `PUT /api/members/{id}`: Update member profile.
 - `DELETE /api/members/{id}`: Soft delete member.
 - `GET /api/plans`: Fetch available subscription plans.
-- `POST /api/plans`: Create new plan (*Owner only*).
-- `PUT /api/plans/{id}`: Edit plan.
+- `POST /api/plans`: Create a dynamic limited (`total_sessions` required) or unlimited plan (*Owner only*).
+- `PUT /api/plans/{id}`: Edit plan; changing a plan to unlimited clears its session limit.
 - `DELETE /api/plans/{id}`: Delete plan (*rejected if linked to active subscriptions*).
 - `POST /api/subscriptions`: Add new subscription for member (*payment_method is fixed to 'cash'*).
 - `POST /api/subscriptions/renew`: Renew subscription (*supports early renewal from old expiry date*).

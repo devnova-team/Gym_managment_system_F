@@ -2,7 +2,7 @@
 
 import { useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContext } from '../../AuthContext/AuthProvider';
+import { AuthContext } from '@/features/auth/context/AuthProvider';
 
 export function AuthGate({ children }) {
     const { isAuthenticated, isReady } = useContext(AuthContext);

@@ -1,1 +1,1 @@
-export { membersApi } from '../../../Service/Apis/membersApi';
+export { membersApi } from '@/features/members/api/rtkEndpoints';

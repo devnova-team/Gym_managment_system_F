@@ -1,9 +1,9 @@
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
-import '../index.css';
+import '@/app/globals.css';
 import { Suspense } from 'react';
-import Providers from '../shared/components/Providers';
-import './metadata.css';
+import Providers from '@/shared/components/Providers';
+import '@/app/metadata.css';
 
 export const metadata = {
     title: 'Gym Management System',

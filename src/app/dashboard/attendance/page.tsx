@@ -1,4 +1,4 @@
-import AttendancePage from '../../../features/attendance/components/AttendancePage';
+import AttendancePage from '@/features/attendance/pages/AttendancePage';
 
 export default function DashboardAttendanceRoute() {
     return <AttendancePage />;
