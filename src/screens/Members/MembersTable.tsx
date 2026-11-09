@@ -10,6 +10,7 @@ import {
 } from "@mantine/core";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { AuthContext } from "../../AuthContext/AuthProvider";
+import { hasRole } from "../../server/auth/permissions";
 
 const STATUS_COLORS = {
   active: "green",
@@ -31,8 +32,9 @@ const MembersTable = ({
   onDeleteClick, // ← CHANGED: prop جديدة للحذف
 }) => {
   const { t, i18n } = useTranslation();
-  const { isOwner } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const isArabic = i18n.language === "ar";
+  const canManageMembers = hasRole(user, ["owner"]);
 
   // ← CHANGED: شيلنا handleDelete، هنستخدم onDeleteClick مباشرة
 
@@ -74,7 +76,7 @@ const MembersTable = ({
                 <Table.Th className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 hidden lg:table-cell">
                   {t("members.columns.createdAt", "Joined")}
                 </Table.Th>
-                {isOwner && (
+                {canManageMembers && (
                   <Table.Th className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400 text-end">
                     {t("members.columns.actions", "Actions")}
                   </Table.Th>
@@ -132,7 +134,7 @@ const MembersTable = ({
                         : "—"}
                     </span>
                   </Table.Td>
-                  {isOwner && (
+                  {canManageMembers && (
                     <Table.Td>
                       <Group gap="xs" justify="flex-end">
                         <Tooltip label={t("common.edit", "Edit")} withArrow>
