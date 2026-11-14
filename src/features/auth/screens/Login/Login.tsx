@@ -14,7 +14,7 @@ const Login = () => {
   const { login } = useContext(AuthContext);
   const [loginApi, { isLoading }] = useLoginMutation();
 
-  const [identifier, setIdentifier] = useState(""); 
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -34,10 +34,10 @@ const Login = () => {
     }
 
     try {
-      // ← CHANGED: الباك إند بياخد email بدل identifier.
-      // بنبعت { email: identifier, password } بدل { identifier, password }.
+      // الباك إند بيقبل email أو phone (مش identifier)، فبنبعت الحقل المناسب.
+      const value = identifier.trim();
       const response = await loginApi({
-        email: identifier,
+        ...(value.includes("@") ? { email: value } : { phone: value }),
         password,
       }).unwrap();
 

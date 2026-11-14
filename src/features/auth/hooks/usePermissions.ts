@@ -7,6 +7,7 @@ import { AuthContext } from '@/features/auth/context/AuthProvider';
 export const PERMISSIONS = {
     managePlans: ['owner'],
     manageSubscriptions: ['owner', 'receptionist'],
+    manageAttendance: ['owner', 'receptionist'],
 };
 
 /**
