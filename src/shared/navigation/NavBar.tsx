@@ -9,30 +9,19 @@ import { useContext } from "react";
 import { useTheme } from "@/shared/providers/ThemeContext";
 import { useLanguage } from "@/shared/providers/LanguageContext";
 import { AuthContext } from "@/features/auth/context/AuthProvider";
-import { useLogoutMutation } from "@/features/auth/api/rtkEndpoints";
 
 const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
     const { isDarkMode, toggleTheme } = useTheme();
     const { language, changeLanguage } = useLanguage();
     const { t } = useTranslation();
     const { user, logout } = useContext(AuthContext);
-    const [logoutApi, { isLoading: isLogoutLoading }] = useLogoutMutation();
-
 
     const toggleLanguage = () => {
         changeLanguage(language === 'en' ? 'ar' : 'en');
     };
     const userRoleKey = user?.role ? `staff.${user.role.toLowerCase()}` : 'staff.owner';
 
-    const handleLogout = async () => {
-        try {
-            await logoutApi(undefined).unwrap();
-        } catch (error) {
-            console.error("Logout request completed or failed:", error);
-        } finally {
-            logout();
-        }
-    };
+    const handleLogout = () => logout();
 
     return (
         <nav data-navbar="true" className="w-full h-20 bg-white dark:bg-[#0e1517] border-b border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-none flex justify-between items-center px-4 md:px-8 z-10 sticky top-0 transition-colors">
@@ -138,7 +127,6 @@ const NavBar = ({ setIsSidebarOpen, isSidebarOpen }) => {
                             color="red"
                             leftSection={<FiLogOut size={14} />}
                             onClick={handleLogout}
-                            disabled={isLogoutLoading}
                         >
                             {t('nav.logout', 'Log Out')}
                         </Menu.Item>
